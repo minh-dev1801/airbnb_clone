@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { Search, User, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';

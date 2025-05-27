@@ -1,3 +1,5 @@
+'use client';
+
 import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, User, Calendar as CalendarIcon } from 'lucide-react';

@@ -21,6 +21,8 @@ import { User as UserType } from '@/lib/client/types/types';
 import LoginModal from './LoginModal';
 import SignupModal from './SignupModal';
 import ButtonLocale from '../common/button/ButtonLocale';
+import { useRouter } from 'next/navigation';
+
 export default function Menu() {
   const { theme, setTheme } = useTheme();
   const t = useTranslations('Header');
@@ -39,7 +41,7 @@ export default function Menu() {
     'authToken',
     null
   );
-
+  const router = useRouter();
   const userName = useMemo(() => user?.name, [user]);
   const userAvatar = useMemo(() => user?.avatar, [user]);
   const userRole = useMemo(() => user?.role, [user]);
@@ -51,6 +53,7 @@ export default function Menu() {
   const handleSignInSuccess = (data: { token: string; user: UserType }) => {
     setAuthToken(data.token);
     setUser(data.user);
+    document.cookie = `authToken=${data.token}; path=/; SameSite=Strict; max-age=3600`;
     showSuccessToast(tToast('Login success'));
     setShowLoginModal(false);
   };
@@ -68,8 +71,10 @@ export default function Menu() {
     dispatch(clearSearch());
     setUser(null);
     setAuthToken(null);
+    document.cookie = `authToken=; path=/; max-age=0`;
     setDropdownOpen(false);
     showSuccessToast(tToast('Logout success'));
+    router.push('/');
   };
 
   const handleOpenLoginModal = (e: MouseEvent) => {

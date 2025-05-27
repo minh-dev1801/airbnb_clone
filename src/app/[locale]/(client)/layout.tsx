@@ -11,6 +11,7 @@ import useInitializeUser from '@/components/client/hooks/useInitializeUser';
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   useInitializeUser();
+
   return (
     <>
       <BackToTop />

@@ -1,3 +1,5 @@
+'use client';
+
 import { RootState } from '@/lib/client/store/store';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';

@@ -1,5 +1,8 @@
-import { AxiosError } from "axios";
-import { SWRConfiguration } from "swr";
+import { AxiosError } from 'axios';
+import { SWRConfiguration } from 'swr';
+import { IConfig } from 'next-sitemap';
+
+export type SitemapConfig = IConfig;
 
 export interface Position {
   id: number;
@@ -33,7 +36,7 @@ export interface Room {
   banUi: boolean;
   maViTri: number;
   hinhAnh: string;
-};
+}
 
 export const defaultRoom: Room = {
   id: 0,
@@ -132,7 +135,8 @@ export interface Message {
 
 export type ApiError = AxiosError | Error;
 
-export interface UseApiOptions<T, E extends ApiError> extends SWRConfiguration<T, E> {
+export interface UseApiOptions<T, E extends ApiError>
+  extends SWRConfiguration<T, E> {
   translate?: (key: string) => string;
 }
 
@@ -141,7 +145,7 @@ export type SearchType = {
   checkIn: Date;
   checkOut: Date;
   guests: number;
-} 
+};
 
 export interface BookingType {
   id: number;
@@ -164,4 +168,6 @@ export interface AvatarForm {
   avatar: FileList;
 }
 
-
+export interface RoomWithBooking extends Room {
+  booking: Booking;
+}

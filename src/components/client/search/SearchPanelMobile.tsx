@@ -1,8 +1,10 @@
-import { useState } from "react";
-import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import SearchDialog from "./dialogs/SearchMobileDialog";
-import { SkeletonCard } from "../common/SkeletonCard";
+'use client';
+
+import { useState } from 'react';
+import { Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import SearchDialog from './dialogs/SearchMobileDialog';
+import { SkeletonCard } from '../common/SkeletonCard';
 
 const SearchPanelMobile = ({ isLoading }: { isLoading: boolean }) => {
   const [showDialog, setShowDialog] = useState(false);
