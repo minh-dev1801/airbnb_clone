@@ -19,9 +19,15 @@ const axiosInstance: AxiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (isClient) {
-      const token = JSON.parse(localStorage.getItem('authToken') || '');
-      if (token) {
-        config.headers.token = token;
+      const authToken = localStorage.getItem('authToken');
+      if (authToken) {
+        try {
+          const token = JSON.parse(authToken);
+          config.headers.token = token;
+        } catch (e) {
+          console.error('Lỗi phân tích authToken:', e);
+          delete config.headers.token;
+        }
       } else {
         delete config.headers.token;
       }
