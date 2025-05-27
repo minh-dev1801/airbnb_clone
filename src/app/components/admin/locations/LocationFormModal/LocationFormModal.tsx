@@ -195,6 +195,7 @@ const LocationFormModal: React.FC<LocationFormModalProps> = ({
 
           <div className="w-full h-auto mb-4">
             {formik.values.hinhAnh && !formik.errors.hinhAnh ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={formik.values.hinhAnh}
                 alt="Preview image"

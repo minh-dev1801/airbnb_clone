@@ -46,6 +46,7 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
           try {
             const response = await http.get<UserInfo>(`/users/${value}`);
             return !!response;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (error) {
             return false;
           }
@@ -82,6 +83,7 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
   const {
     data: userInfo,
     isLoading: userLoading,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     isError: userError,
   } = useQuery({
     queryKey: ['user', formik.values.maNguoiDung],
@@ -294,12 +296,12 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
                 </p>
               ) : userInfo ? (
                 <div className="flex items-center space-x-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={userInfo.avatar || '/default-avatar.png'}
                     alt="User Avatar"
                     className="w-12 h-12 rounded-full object-cover border border-gray-200"
                   />
-
                   <div className="space-y-1">
                     <p className="text-sm font-semibold text-gray-700">
                       {userInfo.name}

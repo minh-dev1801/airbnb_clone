@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useMemo, useCallback } from "react";
@@ -134,5 +135,7 @@ const UserTable: React.FC<UserTableProps> = React.memo(({ users, loading, onEdit
     />
   );
 });
+
+UserTable.displayName = 'UserTable';
 
 export default UserTable;

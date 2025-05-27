@@ -5,7 +5,7 @@ import { Table, Button } from 'antd';
 import { PlusCircleOutlined } from '@ant-design/icons';
 import SearchBar from '@/app/components/admin/searchbar/SearchBar';
 import { TableColumnsType } from 'antd';
-import { Booking } from '@/app/[locale]/admin/bookings/page';
+import { Booking } from '@/app/admin/bookings/page';
 
 interface BookingTableProps {
   filteredBookings: Booking[];
@@ -61,5 +61,7 @@ const BookingTable: React.FC<BookingTableProps> = memo(
     );
   }
 );
+
+BookingTable.displayName = 'BookingTable';
 
 export default BookingTable;

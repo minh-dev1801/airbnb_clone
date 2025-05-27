@@ -74,7 +74,7 @@ export async function getRoomsByUserId(id: string): Promise<Room[]> {
     );
     return response.data.content instanceof Array
       ? response.data.content
-      : defaultRoom;
+      : [defaultRoom];
   } catch (error) {
     throw error;
   }

@@ -48,6 +48,7 @@ const DeleteLocationModal: React.FC<DeleteLocationModalProps> = ({
             </div>
           </div>
           {location.hinhAnh && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={location.hinhAnh}
               alt={location.tenViTri}

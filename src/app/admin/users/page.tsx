@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { Button, Form, message, Modal, Avatar } from 'antd';
+import { Button, Form, message, Modal } from 'antd';
 import { PlusCircleOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { http } from '@/app/lib/client/apiAdmin';
@@ -65,6 +65,7 @@ const UserPage = () => {
   });
 
   const addUserMutation = useMutation({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mutationFn: (newUser: any) => http.post<User>('/users', newUser),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -78,6 +79,7 @@ const UserPage = () => {
   });
 
   const updateUserMutation = useMutation({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mutationFn: ({ id, updatedUser }: { id: number; updatedUser: any }) =>
       http.put(`/users/${id}`, updatedUser),
     onSuccess: () => {
@@ -144,6 +146,7 @@ const UserPage = () => {
   }, []);
 
   const handleAddUser = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (values: any) => {
       const newUser = {
         name: values.name,
@@ -161,6 +164,7 @@ const UserPage = () => {
   );
 
   const handleUpdateUser = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async (values: any) => {
       if (!selectedUser) return;
 

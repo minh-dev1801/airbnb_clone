@@ -77,6 +77,7 @@ const DeleteBookingModal: React.FC<DeleteBookingModalProps> = memo(
                 </div>
                 {userInfo && (
                   <div className="flex-1 flex items-center space-x-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={userInfo.avatar || '/default-avatar.png'}
                       alt="User Avatar"
@@ -126,5 +127,7 @@ const DeleteBookingModal: React.FC<DeleteBookingModalProps> = memo(
     );
   }
 );
+
+DeleteBookingModal.displayName = 'DeleteBookingModal';
 
 export default DeleteBookingModal;

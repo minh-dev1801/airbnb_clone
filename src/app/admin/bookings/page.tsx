@@ -31,7 +31,6 @@ export interface RoomInfo {
 }
 
 const BookingPage = () => {
-  const [page, setPage] = useState(1);
   const [searchText, setSearchText] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -40,6 +39,7 @@ const BookingPage = () => {
   const [modalMode, setModalMode] = useState<'edit' | 'add'>('edit');
   const queryClient = useQueryClient();
 
+  const page = 1;
   const { data: bookingsData, isLoading } = useQuery({
     queryKey: ['bookings', page],
     queryFn: async () => {
@@ -88,7 +88,7 @@ const BookingPage = () => {
       setIsEditModalOpen(false);
       setEditForm(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       message.error(
         `Failed to create booking: ${error?.message || 'Unknown error'}`
       );
@@ -110,7 +110,7 @@ const BookingPage = () => {
       setEditForm(null);
       setSelectedBooking(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       message.error(
         `Failed to update booking: ${error?.message || 'Unknown error'}`
       );
@@ -125,7 +125,7 @@ const BookingPage = () => {
       setIsDeleteModalOpen(false);
       setSelectedBooking(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       message.error(
         `Failed to delete booking: ${error?.message || 'Unknown error'}`
       );
@@ -165,6 +165,7 @@ const BookingPage = () => {
           updatedBooking: formData,
         });
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id, ...newBooking } = formData;
         addBookingMutation.mutate(newBooking);
       }

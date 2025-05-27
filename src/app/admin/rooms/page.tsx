@@ -12,6 +12,7 @@ import RoomFormModal from '@/app/components/admin/room/RoomFormModal/RoomFormMod
 import { Room } from '@/app/types/room/room';
 
 const RoomPage = () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [page, setPage] = useState(1);
   const [searchText, setSearchText] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -41,7 +42,9 @@ const RoomPage = () => {
       setIsEditModalOpen(false);
       setCurrentRoom(null);
     },
-    onError: (error: any) => {},
+    onError: (error: Error) => {
+      console.log('Update room error:', error.message);
+    },
   });
 
   const addRoomMutation = useMutation({
@@ -53,7 +56,9 @@ const RoomPage = () => {
       setIsAddModalOpen(false);
       setCurrentRoom(null);
     },
-    onError: (error: any) => {},
+    onError: (error: Error) => {
+      console.log('Create room error:', error.message);
+    },
   });
 
   const deleteRoomMutation = useMutation({
@@ -64,8 +69,8 @@ const RoomPage = () => {
       setIsDeleteModalOpen(false);
       setRoomToDelete(null);
     },
-    onError: (error: any) => {
-      console.log('Delete room error:', error.response?.data);
+    onError: (error: Error) => {
+      console.log('Delete room error:', error.message);
     },
   });
 
@@ -134,6 +139,7 @@ const RoomPage = () => {
       if (currentRoom?.id) {
         updateRoomMutation.mutate({ id: currentRoom.id, updatedRoom: values });
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id, ...newRoom } = values;
         addRoomMutation.mutate(newRoom);
       }

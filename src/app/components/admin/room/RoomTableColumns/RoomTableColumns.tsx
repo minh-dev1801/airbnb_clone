@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ColumnsType } from 'antd/es/table';
 import { Space, Button, Tooltip } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
