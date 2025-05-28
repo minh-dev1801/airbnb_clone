@@ -34,9 +34,10 @@ export const http: CustomAxiosInstance = axios.create({
 
 http.interceptors.request.use(
   (req: InternalAxiosRequestConfig<any>) => {
-    const accessToken = localStorage.getItem(ACCESS_TOKEN);
-    console.log('Đang gửi accessToken LÀ:', accessToken);
-    console.log('Đang gửi tokenCybersoft LÀ:', TOKEN_CYBERSOFT);
+    const accessTokenRaw = localStorage.getItem(ACCESS_TOKEN);
+    const accessToken = accessTokenRaw?.replace(/^"(.*)"$/, '$1') || '';
+    console.log(accessToken);
+    console.log(TOKEN_CYBERSOFT);
     if (req.headers) {
       req.headers.set('token', accessToken ?? '');
       req.headers.set('tokenCybersoft', TOKEN_CYBERSOFT);

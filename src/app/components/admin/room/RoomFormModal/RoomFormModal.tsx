@@ -1,4 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @next/next/no-img-element */
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Modal,
   Form,
@@ -16,7 +18,6 @@ import * as Yup from 'yup';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Room } from '@/app/types/room/room';
 import { http } from '@/app/lib/client/apiAdmin';
-import { Span } from 'next/dist/trace';
 
 interface RoomFormModalProps {
   isOpen: boolean;
@@ -34,6 +35,13 @@ interface Location {
   hinhAnh?: string;
 }
 
+interface TreeNode {
+  title: string;
+  value: string;
+  selectable?: boolean;
+  children?: TreeNode[];
+}
+
 const RoomFormModal: React.FC<RoomFormModalProps> = ({
   isOpen,
   onClose,
@@ -43,6 +51,56 @@ const RoomFormModal: React.FC<RoomFormModalProps> = ({
 }) => {
   const [selectedFile, setSelectedFile] = useState<RcFile | null>(null);
   const [isImagePreviewable, setIsImagePreviewable] = useState(false);
+
+  const validationSchema = Yup.object({
+    tenPhong: Yup.string().required('Room name is required'),
+    khach: Yup.number().min(1, 'Minimum 1 guest').required('Required'),
+    phongNgu: Yup.number().min(1, 'Minimum 1 bedroom').required('Required'),
+    giuong: Yup.number().min(1, 'Minimum 1 bed').required('Required'),
+    phongTam: Yup.number().min(1, 'Minimum 1 bathroom').required('Required'),
+    giaTien: Yup.number()
+      .min(0, 'Price cannot be negative')
+      .required('Required'),
+    moTa: Yup.string().required('Description is required'),
+    hinhAnh: Yup.string()
+      .when([], {
+        is: () => !!currentRoom?.id,
+        then: (schema) =>
+          schema
+            .url('Invalid image URL')
+            .required('Image URL is required unless uploading a file'),
+        otherwise: (schema) => schema.url('Invalid image URL').optional(),
+      })
+      .test(
+        'is-valid-url-or-file',
+        'Invalid image URL format',
+        function (value) {
+          if (selectedFile || !currentRoom?.id) return true;
+          if (!value) return false;
+          try {
+            new URL(value);
+            return true;
+          } catch {
+            return false;
+          }
+        }
+      ),
+    maViTri: Yup.number()
+      .min(1, 'Please enter a valid location ID (greater than 0)')
+      .required('Location ID is required'),
+    tinhThanh: Yup.string().when('maViTri', {
+      is: (maViTri: number) => maViTri && maViTri > 0,
+      then: (schema) =>
+        schema.required('City/Province could not be loaded or does not exist'),
+      otherwise: (schema) => schema.optional(),
+    }),
+    tenViTri: Yup.string().when('maViTri', {
+      is: (maViTri: number) => maViTri && maViTri > 0,
+      then: (schema) =>
+        schema.required('Location could not be loaded or does not exist'),
+      otherwise: (schema) => schema.optional(),
+    }),
+  });
 
   const formik = useFormik<
     Room & { tenViTri?: string; tinhThanh?: string; tienNghi?: string[] }
@@ -72,48 +130,10 @@ const RoomFormModal: React.FC<RoomFormModalProps> = ({
       tienNghi: [],
     },
     enableReinitialize: true,
-    validationSchema: Yup.object({
-      tenPhong: Yup.string().required('Room name is required'),
-      khach: Yup.number().min(1, 'Minimum 1 guest').required('Required'),
-      phongNgu: Yup.number().min(1, 'Minimum 1 bedroom').required('Required'),
-      giuong: Yup.number().min(1, 'Minimum 1 bed').required('Required'),
-      phongTam: Yup.number().min(1, 'Minimum 1 bathroom').required('Required'),
-      giaTien: Yup.number()
-        .min(0, 'Price cannot be negative')
-        .required('Required'),
-      moTa: Yup.string().required('Description is required'),
-      hinhAnh: Yup.string()
-        .url('Invalid image URL')
-        .required('Image URL is required')
-        .test('is-valid-url', 'Invalid image URL', (value) => {
-          if (!value) return false;
-          try {
-            new URL(value);
-            return true;
-          } catch {
-            return false;
-          }
-        }),
-      maViTri: Yup.number()
-        .min(1, 'Please enter a valid location ID (greater than 0)')
-        .required('Location ID is required'),
-      tinhThanh: Yup.string().when('maViTri', {
-        is: (maViTri: number) => maViTri && maViTri > 0,
-        then: (schema) =>
-          schema.required(
-            'City/Province could not be loaded or does not exist'
-          ),
-        otherwise: (schema) => schema.optional(),
-      }),
-      tenViTri: Yup.string().when('maViTri', {
-        is: (maViTri: number) => maViTri && maViTri > 0,
-        then: (schema) =>
-          schema.required('Location could not be loaded or does not exist'),
-        otherwise: (schema) => schema.optional(),
-      }),
-    }),
+    validationSchema,
     onSubmit: (values) => {
-      const { tenViTri, tinhThanh, tienNghi, ...submitValues } = values;
+      console.log('Form onSubmit triggered with values:', values);
+      const { tenViTri, tinhThanh, tienNghi, id, ...submitValues } = values;
       onSubmit(submitValues as Room);
       formik.resetForm();
       setSelectedFile(null);
@@ -141,13 +161,12 @@ const RoomFormModal: React.FC<RoomFormModalProps> = ({
   });
 
   useEffect(() => {
-    const maViTriValue = formik.values.maViTri;
     if (!isOpen) {
       setIsImagePreviewable(false);
       return;
     }
 
-    if (maViTriValue > 0 && isLocationLoading) {
+    if (formik.values.maViTri > 0 && isLocationLoading) {
       formik.setValues(
         (prev) => ({
           ...prev,
@@ -163,7 +182,7 @@ const RoomFormModal: React.FC<RoomFormModalProps> = ({
         tinhThanh: undefined,
       });
       setIsImagePreviewable(false);
-    } else if (locationData && maViTriValue > 0) {
+    } else if (locationData && formik.values.maViTri > 0) {
       formik.setValues(
         (prev) => ({
           ...prev,
@@ -181,12 +200,12 @@ const RoomFormModal: React.FC<RoomFormModalProps> = ({
       setIsImagePreviewable(true);
       if (
         currentRoom &&
-        currentRoom.maViTri === maViTriValue &&
+        currentRoom.maViTri === formik.values.maViTri &&
         formik.values.hinhAnh === currentRoom.hinhAnh
       ) {
         formik.validateField('hinhAnh');
       }
-    } else if (maViTriValue > 0) {
+    } else if (formik.values.maViTri > 0) {
       formik.setValues(
         (prev) => ({ ...prev, tenViTri: '', tinhThanh: '' }),
         false
@@ -229,75 +248,78 @@ const RoomFormModal: React.FC<RoomFormModalProps> = ({
     Ironing: 'banUi',
   };
 
+  const amenitiesTree: TreeNode[] = useMemo(
+    () => [
+      {
+        title: 'Room amenities',
+        value: 'room-amenities',
+        selectable: false,
+        children: [
+          { title: 'Wifi', value: 'Wifi' },
+          { title: 'TV', value: 'TV' },
+          { title: 'Air conditioning', value: 'Air conditioning' },
+          { title: 'Washing machine', value: 'Washing machine' },
+          { title: 'Iron', value: 'Iron' },
+          { title: 'Kitchen', value: 'Kitchen' },
+          { title: 'Parking', value: 'Parking' },
+          { title: 'Pool', value: 'Pool' },
+        ],
+      },
+    ],
+    []
+  );
+
   useEffect(() => {
     if (currentRoom && isOpen) {
       const selectedAmenities = Object.entries(amenityToFieldMap)
         .filter(([_, field]) => currentRoom[field] === true)
-        .map(([amenity]) => amenity);
+        .map(([amenity]) => amenity)
+        .filter((amenity) =>
+          amenitiesTree
+            .flatMap((group) => group.children ?? [])
+            .some((node) => node?.value === amenity)
+        );
       formik.setFieldValue('tienNghi', selectedAmenities, false);
     }
-  }, [currentRoom, isOpen, formik.setFieldValue]);
+  }, [currentRoom, isOpen, amenitiesTree]);
 
-  const handleAmenitiesChange = (selectedAmenities: string[]) => {
-    formik.setFieldValue('tienNghi', selectedAmenities);
+  const handleAmenitiesChange = useCallback((selectedAmenities: string[]) => {
+    formik.setFieldValue('tienNghi', selectedAmenities, false);
     Object.values(amenityToFieldMap).forEach((field) => {
-      formik.setFieldValue(field, false);
+      formik.setFieldValue(field, false, false);
     });
     selectedAmenities.forEach((amenity) => {
       const field = amenityToFieldMap[amenity];
       if (field) {
-        formik.setFieldValue(field, true);
+        formik.setFieldValue(field, true, false);
       }
     });
-  };
-
-  const amenitiesTree = [
-    {
-      title: 'Room amenities',
-      value: 'room-amenities',
-      selectable: false,
-      children: [
-        { title: 'Wifi', value: 'Wifi' },
-        { title: 'TV', value: 'TV' },
-        { title: 'Air conditioning', value: 'Air conditioning' },
-        { title: 'Balcony', value: 'Balcony' },
-        { title: 'Refrigerator', value: 'Refrigerator' },
-        { title: 'Bathtub', value: 'Bathtub' },
-      ],
-    },
-    {
-      title: 'Personal equipment',
-      value: 'personal-equipment',
-      selectable: false,
-      children: [
-        { title: 'Personal hygiene items', value: 'Personal hygiene items' },
-        { title: 'Towel', value: 'Towel' },
-        { title: 'Hair dryer', value: 'Hair dryer' },
-        { title: 'Washing machine', value: 'Washing machine' },
-      ],
-    },
-  ];
+  }, []);
 
   const uploadImageMutation = useMutation({
     mutationFn: async ({ maPhong, file }: { maPhong: number; file: File }) => {
       const formData = new FormData();
       formData.append('formFile', file);
-      return http.post<Room>(
+      const response = await http.post<Room>(
         `/phong-thue/upload-hinh-phong?maPhong=${maPhong}`,
         formData
       );
+      return response;
     },
     onSuccess: (data: Room) => {
       if (data && data.hinhAnh) {
-        formik.setFieldValue('hinhAnh', data.hinhAnh);
-        message.success('Image uploaded and room image URL updated!');
+        formik.setFieldValue('hinhAnh', data.hinhAnh, false);
+        message.success('Image uploaded successfully!');
       } else {
         message.error('Image uploaded, but failed to get new image URL.');
       }
       setSelectedFile(null);
     },
-    onError: (error: Error) => {
-      message.error(`Image upload failed: ${error.message}`);
+    onError: (error: any) => {
+      console.error('Image upload error:', error);
+      message.error(
+        `Image upload failed: ${error.response?.data?.message || error.message}`
+      );
       setSelectedFile(null);
     },
   });
@@ -311,7 +333,7 @@ const RoomFormModal: React.FC<RoomFormModalProps> = ({
       if (currentRoom?.id) {
         uploadImageMutation.mutate({ maPhong: currentRoom.id, file });
       } else {
-        message.error('Cannot upload image: Room ID is missing.');
+        message.error('Image upload is only available when editing a room.');
       }
       return false;
     },
@@ -319,12 +341,14 @@ const RoomFormModal: React.FC<RoomFormModalProps> = ({
     maxCount: 1,
   };
 
-  const handleModalClose = () => {
+  const handleModalClose = useCallback(() => {
     formik.resetForm();
     setSelectedFile(null);
     setIsImagePreviewable(false);
     onClose();
-  };
+  }, [formik, onClose]);
+
+  const validationErrors = Object.values(formik.errors).filter(Boolean);
 
   return (
     <Modal
@@ -342,11 +366,23 @@ const RoomFormModal: React.FC<RoomFormModalProps> = ({
           backgroundColor: '#fe6b6e',
           borderColor: '#fe6b6e',
         },
+        disabled: validationErrors.length > 0 || uploadImageMutation.isPending,
       }}
       cancelText="Cancel"
       confirmLoading={isFormSubmitting || uploadImageMutation.isPending}
-      destroyOnHidden={true}
+      destroyOnClose
       width={700}
+      footer={(_, { OkBtn, CancelBtn }) => (
+        <>
+          {validationErrors.length > 0 && (
+            <p className="text-red-500 mb-2">
+              Please fix the following errors: {validationErrors.join(', ')}
+            </p>
+          )}
+          <CancelBtn />
+          <OkBtn />
+        </>
+      )}
     >
       <Form layout="vertical" onFinish={formik.handleSubmit}>
         <div className="grid grid-cols-2 gap-4">
@@ -358,9 +394,9 @@ const RoomFormModal: React.FC<RoomFormModalProps> = ({
             help={formik.touched.tenPhong && formik.errors.tenPhong}
           >
             <Input
+              name="tenPhong"
               value={formik.values.tenPhong}
               onChange={formik.handleChange}
-              name="tenPhong"
               onBlur={formik.handleBlur}
               placeholder="Enter room name"
             />
@@ -551,7 +587,7 @@ const RoomFormModal: React.FC<RoomFormModalProps> = ({
         </div>
         <div className="grid grid-cols-2 gap-4 items-center">
           <div>
-            {formik.values.maViTri > 0 && (
+            {currentRoom?.id && formik.values.maViTri > 0 && (
               <Form.Item label="Upload Image">
                 <div className="flex items-center gap-2 w-full">
                   <Upload {...uploadProps}>
@@ -591,7 +627,7 @@ const RoomFormModal: React.FC<RoomFormModalProps> = ({
                   width: '100%',
                   objectFit: 'contain',
                 }}
-                onError={(e) => {
+                onError={() => {
                   if (isImagePreviewable) {
                     formik.setFieldError(
                       'hinhAnh',
