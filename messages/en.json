@@ -204,7 +204,7 @@
     },
     "perNight": "/ night",
     "reviews": "reviews",
-    "checkAvailability": "Check availability",
+    "checkAvailability": "Book now",
     "notChargedYet": "You won't be charged yet",
     "reportListing": "Report this listing",
     "checkIn": "Check-in",
@@ -233,12 +233,22 @@
     "comment": {
       "defaultUsername": "Account",
       "placeholder": "Enter comment...",
-      "submitButton": "Review"
+      "submitButton": "Review",
+      "needLogin": "You need to login to comment",
+      "requiredStarRating": "Please select a rating",
+      "requiredCommentContent": "Comment content cannot be empty"
     },
     "comments": {
       "title": "Comments",
       "userAvatarAlt": "User profile photo"
-    }
+    },
+    "confirmBooking": "Confirm booking",
+    "processing": "Processing...",
+    "confirm": "Confirm",
+    "guest": "guest",
+    "bookingPeriod": "Booking period",
+    "cancel": "Cancel",
+    "guestTitle": "Guest count"
   },
   "Info": {
     "no_room": "No room data available.",
@@ -272,7 +282,8 @@
     "needLogin": "You need to login to comment",
     "requiredPhone": "Please enter a valid phone number",
     "requiredBirthday": "Please enter a valid birthday",
-    "requiredEmail": "Please enter a valid email"
+    "requiredEmail": "Please enter a valid email",
+    "notSupported": "This feature is not supported yet"
   },
   "InfoUser": {
     "title": "User information",

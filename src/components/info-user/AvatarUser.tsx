@@ -4,29 +4,16 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useToggle } from 'react-use';
 import AvatarDialog from './dialogs/AvatarDialog';
-import { useTranslations } from 'next-intl';
-import { Pencil } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/client/store/store';
-import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { Pencil } from 'lucide-react';
 
-const AvatarUser = ({ avatar }: { avatar: string | null }) => {
-  const userStore = useSelector((state: RootState) => state.user);
-  const [currentAvatar, setCurrentAvatar] = useState(
-    avatar || '/placeholder.svg'
-  );
-  const [isFirstRender, setIsFirstRender] = useState(true);
+const AvatarUser = () => {
+  const user = useSelector((state: RootState) => state.user);
+
   const [showUpdateAvatarDialog, setShowUpdateAvatarDialog] = useToggle(false);
   const t = useTranslations('InfoUser');
-
-  useEffect(() => {
-    if (isFirstRender) {
-      setIsFirstRender(false);
-    } else {
-      const newAvatar = userStore.avatar || avatar || '/placeholder.svg';
-      setCurrentAvatar(newAvatar === '' ? '/placeholder.svg' : newAvatar);
-    }
-  }, [userStore.avatar, avatar, isFirstRender]);
 
   const handleOpenDialog = () => {
     setShowUpdateAvatarDialog();
@@ -38,7 +25,7 @@ const AvatarUser = ({ avatar }: { avatar: string | null }) => {
         <Image
           className="object-cover rounded-full"
           alt={t('avatar')}
-          src={currentAvatar}
+          src={user?.avatar || '/placeholder.svg'}
           fill
           sizes="9rem"
         />

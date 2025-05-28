@@ -1,22 +1,65 @@
 'use client';
 
+import { useSelector } from 'react-redux';
+import { RootState } from '@/lib/client/store/store';
 import useApi from '@/lib/client/services/useAPI';
-import { getRoomsByUserId } from '@/lib/client/services/apiService';
+import {
+  getRoomsByUserId,
+  getRoomsById,
+} from '@/lib/client/services/apiService';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '../client/common/EmptyState';
 import RoomCard from '../client/rooms/RoomCard';
-import { Booking, RoomWithBooking } from '@/lib/client/types/types';
-import useRoomDetails from '../client/hooks/useRoomDetails';
+import { Room, Booking } from '@/lib/client/types/types';
+import useSWR from 'swr';
 
-export default function RoomUser({ userId }: { userId: string }) {
+interface RoomWithBooking extends Room {
+  booking: Booking;
+}
+
+function useRoomDetails(bookings: Booking[] | undefined) {
+  const roomIds = bookings?.map((b) => b.maPhong) ?? [];
+
+  const {
+    data: rooms,
+    error,
+    isLoading,
+  } = useSWR<Room[]>(
+    roomIds.length > 0 ? ['/api/phong-thue', roomIds] : null,
+    async () => {
+      const roomPromises = roomIds.map((id) => getRoomsById(id.toString()));
+      return Promise.all(roomPromises);
+    },
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+    }
+  );
+
+  const roomMap =
+    rooms?.reduce((acc, room, index) => {
+      acc[roomIds[index]] = room;
+      return acc;
+    }, {} as Record<number, Room>) ?? {};
+
+  return {
+    roomDetails: roomMap,
+    error,
+    isLoading,
+  };
+}
+
+export default function RoomUser() {
+  const user = useSelector((state: RootState) => state.user);
+
   const {
     data: bookings,
     error: errorBookings,
     isLoading: isLoadingBookings,
   } = useApi<Booking[]>(
-    `/api/dat-phong/lay-theo-nguoi-dung/${userId}`,
+    `/api/dat-phong/lay-theo-nguoi-dung/${user?.id}`,
     async () => {
-      const response = await getRoomsByUserId(userId);
+      const response = await getRoomsByUserId(user?.id?.toString() ?? '');
       return response as unknown as Booking[];
     }
   );

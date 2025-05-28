@@ -8,10 +8,10 @@ import {
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { FieldErrors, useForm } from 'react-hook-form';
 import { Star, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createComment } from '@/lib/client/services/apiService';
 import {
   handleApiError,
@@ -21,12 +21,14 @@ import {
 import { AxiosError } from 'axios';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { useTranslations } from 'next-intl';
-import { CommentType, User as UserType } from '@/lib/client/types/types';
+import { CommentType } from '@/lib/client/types/types';
 import { createSchemas } from '@/lib/client/validator/validatior';
-import { useLocalStorage } from 'react-use';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/lib/client/store/store';
+import { mutate } from 'swr';
 
 export default function CommentForm({ id }: { id: number }) {
-  const [user] = useLocalStorage<UserType | null>('user', null);
+  const user = useSelector((state: RootState) => state.user);
 
   const userAvatar = useMemo(() => user?.avatar, [user]);
   const userName = useMemo(() => user?.name, [user]);
@@ -40,33 +42,59 @@ export default function CommentForm({ id }: { id: number }) {
     resolver: zodResolver(commentSchema.commentSchema),
     defaultValues: {
       maPhong: id,
-      maNguoiBinhLuan: userId,
+      maNguoiBinhLuan: userId || 0,
       ngayBinhLuan: new Date(Date.now()),
       noiDung: '',
-      saoBinhLuan: 0,
+      saoBinhLuan: 1,
     },
   });
+
+  useEffect(() => {
+    if (userId) {
+      form.setValue('maNguoiBinhLuan', userId);
+      form.trigger('maNguoiBinhLuan');
+    }
+  }, [userId, form]);
 
   const onSubmit = async (data: CommentType) => {
     try {
       const formattedData = {
         maPhong: id,
         maNguoiBinhLuan: userId,
-        ngayBinhLuan: new Date(Date.now()).toISOString(),
+        ngayBinhLuan: new Date(Date.now()),
         noiDung: data.noiDung,
         saoBinhLuan: data.saoBinhLuan,
       };
-      const res = await createComment(formattedData);
+
+      const apiData = {
+        ...formattedData,
+        ngayBinhLuan: formattedData.ngayBinhLuan.toISOString(),
+      };
+
+      const res = await createComment(apiData);
       if (res) {
         showSuccessToast(t('commentSuccess'));
-        window.location.reload();
+        form.reset();
+        await mutate(`comments/${id}`);
       }
     } catch (error) {
-      if (error instanceof AxiosError && error?.status === 403) {
-        showErrorToast(tValidation('needLogin'));
-      } else if (error instanceof AxiosError) {
+      if (error instanceof AxiosError) {
         handleApiError(error);
       }
+    }
+  };
+
+  const onError = (errors: FieldErrors<CommentType>) => {
+    if (errors.maNguoiBinhLuan && !userId) {
+      showErrorToast(t('comment.needLogin'));
+      return;
+    }
+
+    if (errors.noiDung) {
+      showErrorToast(t('comment.requiredCommentContent'));
+    }
+    if (errors.saoBinhLuan) {
+      showErrorToast(t('comment.requiredStarRating'));
     }
   };
 
@@ -89,7 +117,10 @@ export default function CommentForm({ id }: { id: number }) {
 
       <div className="mt-3 p-3 w-full">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit, onError)}
+            className="space-y-4"
+          >
             <FormField
               control={form.control}
               name="saoBinhLuan"
@@ -124,7 +155,7 @@ export default function CommentForm({ id }: { id: number }) {
             <div>
               <Button
                 type="submit"
-                className="px-5 py-2 rounded-lg bg-rose-600 text-white duration-200 hover:bg-rose-700 cursor-pointer"
+                className="px-5 py-2 rounded-lg bg-rose-600 text-white duration-200 hover:bg-rose-500 cursor-pointer disabled:opacity-50 hover:scale-105 transition-all"
               >
                 {t('comment.submitButton')}
               </Button>
@@ -135,7 +166,6 @@ export default function CommentForm({ id }: { id: number }) {
     </div>
   );
 }
-
 interface RatingStarsProps {
   value: number;
   onChange: (value: number) => void;

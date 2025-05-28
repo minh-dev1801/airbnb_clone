@@ -29,8 +29,9 @@ import { useForm, useFormContext, UseFormReturn } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
 import { createSchemas } from '@/lib/client/validator/validatior';
-import { User as UserType } from '@/lib/client/types/types';
-import { useLocalStorage } from 'react-use';
+import BookingDialog from './dialog/BookingDialog';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/lib/client/store/store';
 
 type BookingFormProps = {
   room: Room;
@@ -47,13 +48,14 @@ type PriceSummaryProps = {
 export default function BookingForm({ room, comments }: BookingFormProps) {
   const pricePerNight = room.giaTien;
   const cleaningFee = 8;
-  const [user] = useLocalStorage<UserType | null>('user', null);
+  const user = useSelector((state: RootState) => state.user);
   const t = useTranslations('RoomDetail');
   const tValidation = useTranslations('ValidationErrors');
   const locale = useLocale();
   const schemas = createSchemas(tValidation);
-
   const userID = useMemo(() => user?.id, [user]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [isBookingLoading, setIsBookingLoading] = useState(false);
 
   const form = useForm<BookingType>({
     resolver: zodResolver(schemas.bookingSchema),
@@ -89,17 +91,25 @@ export default function BookingForm({ room, comments }: BookingFormProps) {
   const nights = calculateNights();
   const total = pricePerNight * nights + cleaningFee;
 
-  const onSubmit = async (data: BookingType) => {
-    try {
-      if (!userID) {
-        showErrorToast(t('loginRequired'));
-        return;
-      }
+  const handleBookingSubmit = async () => {
+    if (!userID) {
+      showErrorToast(t('loginRequired'));
+      return;
+    }
 
+    const isValid = await form.trigger();
+    if (!isValid) {
+      return;
+    }
+
+    const formData = form.getValues();
+    setIsBookingLoading(true);
+
+    try {
       const bookingData = {
-        ...data,
-        ngayDen: data.ngayDen.toISOString(),
-        ngayDi: data.ngayDi.toISOString(),
+        ...formData,
+        ngayDen: formData.ngayDen.toISOString(),
+        ngayDi: formData.ngayDi.toISOString(),
         maNguoiDung: userID,
       };
 
@@ -108,7 +118,17 @@ export default function BookingForm({ room, comments }: BookingFormProps) {
     } catch (error) {
       console.log(error);
       handleApiError(error as AxiosError);
+    } finally {
+      setIsBookingLoading(false);
     }
+  };
+
+  const handleCheckAvailability = () => {
+    if (!userID) {
+      showErrorToast(t('loginRequired'));
+      return;
+    }
+    setOpenDialog(true);
   };
 
   return (
@@ -136,21 +156,23 @@ export default function BookingForm({ room, comments }: BookingFormProps) {
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form className="space-y-4">
             <DatePicker />
             <GuestCounter form={form} />
-            <Button
-              type="submit"
-              className="bg-rose-600 w-full py-3 rounded-lg font-bold text-white hover:bg-rose-700 cursor-pointer"
-            >
-              {t('checkAvailability')}
-            </Button>
           </form>
         </Form>
 
-        <p className="text-center text-gray-400 dark:text-white">
+        <Button
+          onClick={handleCheckAvailability}
+          className="bg-rose-600 w-full py-3 rounded-lg font-bold text-white hover:bg-rose-700 cursor-pointer"
+        >
+          {t('checkAvailability')}
+        </Button>
+
+        <p className="text-center text-gray-600 dark:text-white">
           {t('notChargedYet')}
         </p>
+
         <PriceSummary
           price={pricePerNight}
           nights={nights}
@@ -159,7 +181,7 @@ export default function BookingForm({ room, comments }: BookingFormProps) {
         />
       </div>
       <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
-        <FlagIcon />
+        <FlagIcon className="dark:text-white" />
         <Link
           href="/under-dev"
           className="underline hover:text-rose-600 dark:text-white"
@@ -167,6 +189,15 @@ export default function BookingForm({ room, comments }: BookingFormProps) {
           {t('reportListing')}
         </Link>
       </div>
+      <BookingDialog
+        open={openDialog}
+        onOpenChange={setOpenDialog}
+        onConfirm={handleBookingSubmit}
+        checkInDate={form.watch('ngayDen')}
+        checkOutDate={form.watch('ngayDi')}
+        guestCount={form.watch('soLuongKhach')}
+        isLoading={isBookingLoading}
+      />
     </div>
   );
 }
@@ -215,27 +246,20 @@ function DatePicker() {
                       initialFocus
                       className="dark:bg-gray-800 dark:border-gray-700 dark:border-1 rounded-lg"
                       classNames={{
-                        // Header (caption)
                         caption: 'flex justify-center items-center relative',
                         caption_label:
                           'text-lg font-bold text-rose-500 dark:text-rose-400 cursor-default',
-                        // Navigation buttons (Previous/Next)
                         nav: 'flex items-center',
                         nav_button:
                           'w-6 h-6 rounded-full flex items-center justify-center bg-rose-500 text-white hover:bg-rose-700 dark:bg-gray-700 dark:hover:bg-gray-600 cursor-pointer',
                         nav_button_previous: 'absolute left-2',
                         nav_button_next: 'absolute right-2',
-                        // Weekday headers (Mon, Tue,...)
                         head_cell:
                           'text-red-500 dark:text-rose-400 font-bold flex items-center justify-center w-full py-2',
-                        // Calendar grid
                         row: 'flex gap-1 mt-1',
-                        // Normal day
                         day: 'w-10 h-10 rounded-full text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700',
-                        // Selected day
                         day_selected:
                           'bg-rose-600 text-white hover:bg-rose-600 hover:text-white dark:bg-rose-700 dark:hover:bg-rose-800',
-                        // Today
                         day_today:
                           'border-rose-400 border-2 font-semibold bg-rose-50 text-rose-600 hover:bg-rose-50 dark:border-rose-500 dark:bg-gray-800 dark:text-rose-400 dark:hover:bg-gray-700',
                       }}
@@ -327,8 +351,7 @@ function GuestCounter({ form }: { form: UseFormReturn<BookingType> }) {
   const t = useTranslations('RoomDetail');
 
   return (
-    <div className="p-3 border-2 border-gray-600 rounded-lg">
-      <div className="mb-3 font-bold">{t('guests')}</div>
+    <div className="px-3 py-5 border-1 border-gray-300 rounded-lg">
       <FormField
         control={form.control}
         name="soLuongKhach"
@@ -339,6 +362,7 @@ function GuestCounter({ form }: { form: UseFormReturn<BookingType> }) {
                 <Button
                   type="button"
                   className="w-9 h-9 bg-rose-600 hover:bg-rose-700 rounded-full dark:text-white cursor-pointer"
+                  disabled={field.value <= 1}
                   onClick={() =>
                     field.value > 1 && field.onChange(field.value - 1)
                   }

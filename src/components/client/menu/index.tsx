@@ -14,7 +14,7 @@ import { Menu as MenuIcon, Moon, Sun, User, X } from 'lucide-react';
 import Link from 'next/link';
 import { MouseEvent } from 'react';
 import MobileMenu from './MobileMenu';
-import { clearUser } from '@/lib/client/store/slices/userSlice';
+import { clearUser, setUser } from '@/lib/client/store/slices/userSlice';
 import { clearSearch } from '@/lib/client/store/slices/searchSlice';
 import { showSuccessToast } from '@/lib/client/services/notificationService';
 import { User as UserType } from '@/lib/client/types/types';
@@ -33,7 +33,7 @@ export default function Menu() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSignupModal, setShowSignupModal] = useState(false);
   const [visible, setVisible] = useToggle(false);
-  const [user, setUser, removeUser] = useLocalStorage<UserType | null>(
+  const [user, updateUser, removeUser] = useLocalStorage<UserType | null>(
     'user',
     null
   );
@@ -52,14 +52,15 @@ export default function Menu() {
 
   const handleSignInSuccess = (data: { token: string; user: UserType }) => {
     setAuthToken(data.token);
-    setUser(data.user);
+    updateUser(data.user);
+    dispatch(setUser(data.user));
     document.cookie = `authToken=${data.token}; path=/; SameSite=Strict; max-age=3600`;
     showSuccessToast(tToast('Login success'));
     setShowLoginModal(false);
   };
 
   const handleSignUpSuccess = (data: { user: UserType }) => {
-    setUser(data.user);
+    updateUser(data.user);
     showSuccessToast(tToast('Signup success'));
     setShowSignupModal(false);
   };
@@ -69,7 +70,7 @@ export default function Menu() {
     removeUser();
     dispatch(clearUser());
     dispatch(clearSearch());
-    setUser(null);
+    updateUser(null);
     setAuthToken(null);
     document.cookie = `authToken=; path=/; max-age=0`;
     setDropdownOpen(false);

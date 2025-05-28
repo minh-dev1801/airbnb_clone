@@ -204,7 +204,7 @@
     },
     "perNight": "/ đêm",
     "reviews": "đánh giá",
-    "checkAvailability": "Kiểm tra tình trạng còn phòng",
+    "checkAvailability": "Đặt phòng",
     "notChargedYet": "Bạn vẫn chưa bị trừ tiền",
     "reportListing": "Báo cáo nhà/phòng cho thuê này",
     "checkIn": "Nhận phòng",
@@ -233,12 +233,22 @@
     "comment": {
       "defaultUsername": "Tài khoản",
       "placeholder": "Nhập bình luận ...",
-      "submitButton": "Đánh giá"
+      "submitButton": "Đánh giá",
+      "needLogin": "Bạn cần đăng nhập để bình luận",
+      "requiredStarRating": "Vui lòng chọn đánh giá sao",
+      "requiredCommentContent": "Nội dung bình luận không được để trống"
     },
     "comments": {
       "title": "Bình luận",
       "userAvatarAlt": "Ảnh hồ sơ của người dùng"
-    }
+    },
+    "confirmBooking": "Xác nhận đặt phòng",
+    "processing": "Đang xử lý...",
+    "confirm": "Xác nhận",
+    "guest": "khách",
+    "bookingPeriod": "Khoảng thời gian đặt phòng",
+    "cancel": "Hủy",
+    "guestTitle": "Số lượng khách"
   },
   "Info": {
     "no_room": "Không có dữ liệu phòng",
@@ -272,7 +282,8 @@
     "needLogin": "Bạn cần đăng nhập để bình luận",
     "requiredPhone": "Vui lòng nhập số điện thoại hợp lệ",
     "requiredBirthday": "Vui lòng nhập ngày sinh hợp lệ",
-    "requiredEmail": "Vui lòng nhập email hợp lệ"
+    "requiredEmail": "Vui lòng nhập email hợp lệ",
+    "notSupported": "Tính năng này chưa hỗ trợ"
   },
   "InfoUser": {
     "title": "Thông tin người dùng",

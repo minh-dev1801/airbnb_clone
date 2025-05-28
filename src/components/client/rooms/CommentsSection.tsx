@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { Comment } from "@/lib/client/types/types";
-import { formatDateTime, isValidUrl } from "@/lib/utils";
-import Image from "next/image";
-import { Star } from "lucide-react";
+import { useState } from 'react';
+import { Comment } from '@/lib/client/types/types';
+import { formatDateTime, isValidUrl } from '@/lib/utils';
+import Image from 'next/image';
+import { Star } from 'lucide-react';
 import {
   Pagination,
   PaginationContent,
@@ -10,8 +10,10 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination";
-import { useTranslations } from "next-intl";
+  PaginationEllipsis,
+} from '@/components/ui/pagination';
+import { useTranslations } from 'next-intl';
+
 interface CommentsSectionProps {
   comments: Comment[];
 }
@@ -25,7 +27,7 @@ export default function CommentsSection({ comments }: CommentsSectionProps) {
     startIndex,
     startIndex + commentsPerPage
   );
-  const t = useTranslations("RoomDetail");
+  const t = useTranslations('RoomDetail');
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -33,23 +35,58 @@ export default function CommentsSection({ comments }: CommentsSectionProps) {
     }
   };
 
+  const getPageNumbers = () => {
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+
+    range.push(1);
+
+    for (
+      let i = Math.max(2, currentPage - delta);
+      i <= Math.min(totalPages - 1, currentPage + delta);
+      i++
+    ) {
+      range.push(i);
+    }
+
+    if (totalPages > 1) {
+      range.push(totalPages);
+    }
+
+    let prev = 0;
+    for (const page of range) {
+      if (page - prev === 2) {
+        rangeWithDots.push(prev + 1);
+      } else if (page - prev !== 1) {
+        rangeWithDots.push('ellipsis');
+      }
+      rangeWithDots.push(page);
+      prev = page;
+    }
+
+    return rangeWithDots;
+  };
+
+  const pageNumbers = getPageNumbers();
+
   return (
     <div>
-      <h3 className="font-bold text-xl mb-4">{t("comments.title")}</h3>
+      <h3 className="font-bold text-xl mb-4">{t('comments.title')}</h3>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 px-2 h-80 overflow-y-auto">
         {paginatedComments.map((comment: Comment, index: number) => (
           <div key={index} className="space-y-3">
             <div className="flex items-center gap-3">
               <div>
                 <Image
-                  alt={t("comments.userAvatarAlt")}
+                  alt={t('comments.userAvatarAlt')}
                   className="w-12 h-12 rounded-full object-cover"
                   width={48}
                   height={48}
                   src={
                     isValidUrl(comment.avatar)
                       ? comment.avatar
-                      : "/placeholder.svg"
+                      : '/placeholder.svg'
                   }
                 />
               </div>
@@ -76,39 +113,55 @@ export default function CommentsSection({ comments }: CommentsSectionProps) {
         ))}
       </div>
 
-      <div className="mt-10 mb-4">
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                onClick={() => handlePageChange(currentPage - 1)}
-                className="cursor-pointer hover:bg-rose-100 hover:text-rose-600 transition-colors dark:hover:bg-gray-800 dark:hover:text-white"
-              />
-            </PaginationItem>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <PaginationItem key={page}>
-                <PaginationLink
-                  onClick={() => handlePageChange(page)}
-                  isActive={currentPage === page}
-                  className={`cursor-pointer hover:bg-rose-100 hover:text-rose-600 transition-colors ${
-                    currentPage === page
-                      ? "bg-rose-500 text-white hover:bg-rose-600 hover:text-white"
-                      : ""
+      {totalPages > 1 && (
+        <div className="mt-10 mb-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  className={`cursor-pointer transition-colors ${
+                    currentPage === 1
+                      ? 'opacity-50 cursor-not-allowed pointer-events-none'
+                      : 'hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-gray-800 dark:hover:text-white'
                   }`}
-                >
-                  {page}
-                </PaginationLink>
+                />
               </PaginationItem>
-            ))}
-            <PaginationItem>
-              <PaginationNext
-                onClick={() => handlePageChange(currentPage + 1)}
-                className="cursor-pointer hover:bg-rose-100 hover:text-rose-600 transition-colors dark:hover:bg-gray-800 dark:hover:text-white"
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      </div>
+
+              {pageNumbers.map((item, index) => (
+                <PaginationItem key={index}>
+                  {item === 'ellipsis' ? (
+                    <PaginationEllipsis />
+                  ) : (
+                    <PaginationLink
+                      onClick={() => handlePageChange(item as number)}
+                      isActive={currentPage === item}
+                      className={`cursor-pointer hover:bg-rose-100 hover:text-rose-600 transition-colors ${
+                        currentPage === item
+                          ? 'bg-rose-500 text-white hover:bg-rose-600 hover:text-white dark:bg-rose-600 dark:hover:bg-rose-700 dark:text-white'
+                          : 'dark:hover:bg-gray-800 dark:hover:text-white'
+                      }`}
+                    >
+                      {item}
+                    </PaginationLink>
+                  )}
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  className={`cursor-pointer transition-colors ${
+                    currentPage === totalPages
+                      ? 'opacity-50 cursor-not-allowed pointer-events-none'
+                      : 'hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-gray-800 dark:hover:text-white'
+                  }`}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
     </div>
   );
 }
