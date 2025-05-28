@@ -7,7 +7,10 @@ export default async function middleware(request: NextRequest) {
   const intlMiddleware = createMiddleware(routing);
   const intlResponse = intlMiddleware(request);
 
-  if (intlResponse.status !== 200 || intlResponse.headers.has('Location')) {
+  if (
+    intlResponse.status !== 200 ||
+    intlResponse.headers.has('x-middleware-rewrite')
+  ) {
     return intlResponse;
   }
 
