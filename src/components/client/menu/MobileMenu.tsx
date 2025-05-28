@@ -46,7 +46,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ visible, setVisible }) => {
       >
         <Link
           href={`/${locale}${item.href}`}
-          className={`flex items-center py-3 px-4 text-lg font-medium transition-all duration-200 rounded-lg ${
+          className={`flex items-center py-3 px-4 text-sm sm:text-lg font-medium transition-all duration-200 rounded-lg ${
             isActive
               ? "text-custom-rose bg-rose-50 dark:bg-gray-800"
               : "text-gray-600 hover:text-custom-rose hover:bg-gray-100 dark:text-gray-300 dark:hover:text-custom-rose dark:hover:bg-gray-800"
@@ -73,7 +73,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ visible, setVisible }) => {
           aria-label="Mobile site menu"
         >
           <motion.ul
-            className="flex flex-col space-y-4 p-6"
+            className="flex flex-col space-y-2 sm:space-y-4 p-4 pb-0 sm:p-6"
             initial="hidden"
             animate="visible"
             variants={containerVariants}
@@ -82,7 +82,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ visible, setVisible }) => {
             <ButtonLocale className="text-sm text-white mr-2" />
           </motion.ul>
 
-          <div className="px-6 pb-6">
+          <div className="px-6 pb-2 sm:pb-6">
             <button
               onClick={setVisible}
               className="w-full py-3 text-sm font-medium text-center text-gray-500 transition-colors duration-200 rounded-lg hover:text-custom-rose hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 cursor-pointer"

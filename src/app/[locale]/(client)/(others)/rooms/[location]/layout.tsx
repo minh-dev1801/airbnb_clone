@@ -1,9 +1,9 @@
 import { ReactNode } from 'react';
-import Banner from '@/components/client/banner';
 import Search from '@/components/client/search';
 import FilterRoom from '@/components/client/rooms/FilterRoom';
 import { getLocale } from 'next-intl/server';
 import { Metadata } from 'next';
+import SubBanner from '@/components/client/banner/SubBanner';
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = (await getLocale()) as 'vi' | 'en';
@@ -51,7 +51,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RoomsLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      <Banner />
+      <SubBanner />
       <Search />
       <FilterRoom />
       {children}

@@ -69,7 +69,7 @@ export default function ListRoom({ location }: { location: string }) {
           aria-label={t("accommodation_list")}
           role="region"
         >
-          <p aria-live="polite">
+          <p aria-live="polite" className="text-base">
             {t("found_accommodations", {
               count: rooms.length,
               location: position?.tinhThanh ?? "",
@@ -77,7 +77,7 @@ export default function ListRoom({ location }: { location: string }) {
             • {formatISOToDDMMYYYY(searchData.checkIn)} –{" "}
             {formatISOToDDMMYYYY(searchData.checkOut)}
           </p>
-          <h1 className="font-bold text-xl md:text-3xl text-black dark:text-white">
+          <h1 className="font-bold text-lg sm:text-xl md:text-3xl text-black dark:text-white">
             {t("stays_in_selected_map_area")}
           </h1>
           <div className="space-y-6">
@@ -93,7 +93,7 @@ export default function ListRoom({ location }: { location: string }) {
         </div>
       )}
       <div
-        className="mb-8 lg:mb-0 lg:h-screen lg:w-[470px] xl:w-xl w-[444px] md:w-[730px] lg:sticky lg:top-0 lg:right-0 lg:mt-32"
+        className="mb-8 lg:mb-0 lg:h-screen lg:w-[470px] xl:w-xl w-[340px] md:w-[700px] lg:sticky lg:top-0 lg:right-0 lg:mt-32"
         role="complementary"
         aria-label={t("map_area")}
       >

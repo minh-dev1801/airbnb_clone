@@ -116,7 +116,6 @@ export default function BookingForm({ room, comments }: BookingFormProps) {
       await createBooking(bookingData);
       showSuccessToast(t('bookingSuccess'));
     } catch (error) {
-      console.log(error);
       handleApiError(error as AxiosError);
     } finally {
       setIsBookingLoading(false);
@@ -132,7 +131,7 @@ export default function BookingForm({ room, comments }: BookingFormProps) {
   };
 
   return (
-    <div className="space-y-6 sticky w-full lg:h-[350px] top-32 mb-10">
+    <div className="space-y-6 sticky w-full lg:h-[350px] top-32 mb-0 sm:mb-10">
       <div className="p-6 rounded-lg border-2 border-gray-300 space-y-6 shadow-xl dark:bg-gray-800 dark:border-gray-700 dark:border-1">
         <div className="flex flex-wrap justify-between items-center gap-3">
           <div>

@@ -13,10 +13,10 @@ export default function FilterRoom() {
   ];
 
   const buttonClass =
-    "rounded-lg border text-md px-6 py-2 text-black border-gray-300 duration-300 cursor-pointer hover:bg-rose-100 hover:text-rose-600 hover:border-transparent dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-white";
+    "rounded-lg border text-sm sm:text-md px-4 sm:px-6 py-2 text-black border-gray-300 duration-300 cursor-pointer hover:bg-rose-100 hover:text-rose-600 hover:border-transparent dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-white";
 
   return (
-    <div className="mt-10 flex flex-wrap justify-center gap-3">
+    <div className="mt-5 sm:mt-10 flex flex-wrap justify-center gap-3">
       {filters.map((filter) => (
         <Link
           key={filter}

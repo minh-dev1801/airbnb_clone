@@ -15,10 +15,10 @@ const Footer = () => {
         className="border-t bg-gray-100 dark:bg-gray-900 dark:border-gray-700"
         role="contentinfo"
       >
-        <div className="container mx-auto py-6 px-4 md:px-0">
+        <div className="lg:container sm:max-w-2xl mx-auto py-6 px-4 md:px-0">
           <nav
             aria-label="Footer links"
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-12"
           >
             <div className="space-y-3">
               <h2

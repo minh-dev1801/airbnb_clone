@@ -34,7 +34,7 @@ export default function Banner() {
   ]);
 
   return (
-    <div className="relative w-full h-[50vh] md:h-[60vh] lg:h-[70vh] 2xl:h-[80vh]">
+    <div className="relative w-full h-[40vh] md:h-[50vh] lg:h-[60vh] 2xl:h-[80vh]">
       <video
         ref={videoRef}
         loop
@@ -53,7 +53,7 @@ export default function Banner() {
 
       <div className="absolute inset-x-0 px-4 md:bottom-10 xl:bottom-20 max-w-screen-xl mx-auto h-full flex flex-col justify-center">
         <div className="flex items-center gap-2" data-aos="fade-up">
-          <div className="relative w-8 h-8 md:w-14 md:h-14">
+          <div className="relative w-6 h-6 sm:w-8 sm:h-8 md:w-14 md:h-14">
             <Image
               src="/airbnb-1.svg"
               alt="Airbnb logo"
@@ -62,12 +62,12 @@ export default function Banner() {
               priority
             />
           </div>
-          <h2 className="text-3xl md:text-5xl lg:text-7xl text-custom-rose font-bold cursor-default">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-7xl text-custom-rose font-bold cursor-default">
             airbnb
           </h2>
         </div>
         <p
-          className="text-white text-lg md:text-2xl lg:text-3xl cursor-default"
+          className="text-white text-md md:text-2xl lg:text-3xl cursor-default"
           data-aos="fade-up"
           data-aos-delay="100"
         >

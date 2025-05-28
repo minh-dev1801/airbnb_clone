@@ -240,7 +240,8 @@
     },
     "comments": {
       "title": "Comments",
-      "userAvatarAlt": "User profile photo"
+      "userAvatarAlt": "User profile photo",
+      "noComments": "No comments found"
     },
     "confirmBooking": "Confirm booking",
     "processing": "Processing...",
@@ -318,11 +319,20 @@
     "greeting": "Hello, I am {name}",
     "joinedSince": "Joined in {year}",
     "rentedRooms": "Rented rooms",
-    "editProfile": "Edit profile"
+    "editProfile": "Edit profile",
+    "no_data": "No data available"
   },
   "UnderDev": {
     "title": "Under development",
     "description": "We are working on this feature. Please come back later!",
     "backHome": "Back to home"
+  },
+  "SearchPanelMobile": {
+    "startSearching": "Start searching"
+  },
+  "NotFound": {
+    "404": "404",
+    "pageNotFound": "Page not found",
+    "backToHome": "Back to home"
   }
 }

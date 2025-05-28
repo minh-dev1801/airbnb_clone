@@ -240,7 +240,8 @@
     },
     "comments": {
       "title": "Bình luận",
-      "userAvatarAlt": "Ảnh hồ sơ của người dùng"
+      "userAvatarAlt": "Ảnh hồ sơ của người dùng",
+      "noComments": "Không tìm thấy bình luận"
     },
     "confirmBooking": "Xác nhận đặt phòng",
     "processing": "Đang xử lý...",
@@ -318,11 +319,20 @@
     "joinedSince": "Tham gia vào {year}",
     "rentedRooms": "Phòng đã thuê",
     "greeting": "Xin chào, tôi là {name}",
-    "editProfile": "Chỉnh sửa hồ sơ"
+    "editProfile": "Chỉnh sửa hồ sơ",
+    "no_data": "Không có dữ liệu"
   },
   "UnderDev": {
     "title": "Đang xây dựng",
     "description": "Chúng tôi đang làm việc trên tính năng này. Vui lòng quay lại sau!",
     "backHome": "Quay lại trang chủ"
+  },
+  "SearchPanelMobile": {
+    "startSearching": "Bắt đầu tìm kiếm"
+  },
+  "NotFound": {
+    "404": "404",
+    "pageNotFound": "Trang không tồn tại",
+    "backToHome": "Quay lại trang chủ"
   }
 }

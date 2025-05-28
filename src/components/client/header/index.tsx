@@ -1,19 +1,21 @@
-import Link from "next/link";
-import Image from "next/image";
-import { motion } from "framer-motion";
-import { navItems } from "@/lib/client/types/dataTypes";
-import { useLocale, useTranslations } from "next-intl";
-import { useWindowScroll, useDebounce } from "react-use";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { getTranslatedItems } from "@/lib/utils";
-import Menu from "../menu/index";
+'use client';
 
-const Header = () => {
+import Link from 'next/link';
+import Image from 'next/image';
+import { motion } from 'framer-motion';
+import { navItems } from '@/lib/client/types/dataTypes';
+import { useLocale, useTranslations } from 'next-intl';
+import { useWindowScroll, useDebounce } from 'react-use';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+import { getTranslatedItems } from '@/lib/utils';
+import Menu from '../menu/index';
+
+const SubHeader = () => {
   const { y } = useWindowScroll();
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
-  const t = useTranslations("Header");
+  const t = useTranslations('Header');
   const locale = useLocale();
 
   useDebounce(
@@ -24,24 +26,25 @@ const Header = () => {
     [Math.floor(y / 10)]
   );
 
-  const translatedNavItems = getTranslatedItems(navItems, t, "label");
+  const translatedNavItems = getTranslatedItems(navItems, t, 'label');
 
   return (
     <motion.nav
       layout
-      initial={{ y: "-102%", opacity: 0 }}
+      initial={{ y: '-102%', opacity: 0 }}
       animate={{
-        y: isScrolled ? "-102%" : "0%",
+        y: isScrolled ? '-102%' : '0%',
         opacity: isScrolled ? 0 : 1,
       }}
-      transition={{ type: "spring", stiffness: 120, damping: 10, mass: 0.8 }}
-      className="fixed z-50 w-full bg-transparent"
+      transition={{ type: 'spring', stiffness: 120, damping: 10, mass: 0.8 }}
+      className="fixed top-0 left-0 z-50 mx-auto"
+      style={{ width: '100vw' }}
     >
-      <div className="container mx-auto max-w-screen-xl flex items-center justify-between py-6 px-4">
+      <div className="flex items-center justify-between py-4 px-4 bg-transparent">
         <Link
           href="/"
           className="flex items-center gap-3"
-          aria-label={t("Airbnb Home")}
+          aria-label={t('Airbnb Home')}
         >
           <div className="relative w-7 h-7 md:w-8 md:h-8">
             <Image src="/airbnb-1.svg" alt="Airbnb Logo" fill sizes="32px" />
@@ -61,10 +64,10 @@ const Header = () => {
                     href={`/${locale}${item.href}`}
                     className={`transition-colors duration-200 ${
                       isActive
-                        ? "text-rose-600"
-                        : "hover:text-rose-600 text-white"
+                        ? 'text-rose-600'
+                        : 'hover:text-rose-600 text-white'
                     }`}
-                    aria-current={isActive ? "page" : undefined}
+                    aria-current={isActive ? 'page' : undefined}
                   >
                     {item.label}
                   </Link>
@@ -80,4 +83,4 @@ const Header = () => {
   );
 };
 
-export default Header;
+export default SubHeader;

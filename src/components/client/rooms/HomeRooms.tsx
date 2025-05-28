@@ -14,18 +14,18 @@ export default function HomeRooms() {
 
   return (
     <div
-      className="max-w-md md:container mx-auto space-y-6 pt-8 pb-20"
+      className="max-w-md md:container mx-auto space-y-6 pt-0 sm:pt-8 pb-10 lg:pb-20"
       role="region"
       aria-labelledby="home-rooms-title"
     >
       <h1
         id="home-rooms-title"
-        className="font-bold text-3xl text-gray-800 dark:text-gray-100"
+        className="font-bold text-xl sm:text-3xl text-gray-800 dark:text-gray-100"
       >
         {sectionTitle}
       </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {translatedRooms.map((room) => (
           <Link
             key={room.href}
@@ -50,7 +50,7 @@ export default function HomeRooms() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </CardHeader>
 
-              <CardContent className="p-4">
+              <CardContent className="py-0 px-4 sm:p-4">
                 <CardTitle className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                   {room.title}
                 </CardTitle>

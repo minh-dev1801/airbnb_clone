@@ -13,6 +13,7 @@ import {
   PaginationEllipsis,
 } from '@/components/ui/pagination';
 import { useTranslations } from 'next-intl';
+import EmptyState from '../common/EmptyState';
 
 interface CommentsSectionProps {
   comments: Comment[];
@@ -28,6 +29,10 @@ export default function CommentsSection({ comments }: CommentsSectionProps) {
     startIndex + commentsPerPage
   );
   const t = useTranslations('RoomDetail');
+
+  if (comments.length === 0) {
+    return <EmptyState title={t('comments.noComments')} />;
+  }
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {

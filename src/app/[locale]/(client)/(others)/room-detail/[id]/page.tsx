@@ -64,12 +64,12 @@ export default function RoomDetailPage() {
   }
 
   return (
-    <div className="max-w-md md:container mx-auto py-5 space-y-5">
+    <div className="max-w-md md:container mx-auto py-0 sm:py-5 px-2 lg:px-0 space-y-5">
       <RoomHeader room={room} />
 
       <RoomImage roomImage={room.hinhAnh} />
 
-      <div className="grid grid-cols-1 lg:flex lg:gap-0 justify-between gap-5">
+      <div className="grid grid-cols-1 lg:flex lg:gap-0 justify-between gap-0 sm:gap-5">
         <div className="basis-7/12 space-y-5">
           <RoomDetails />
         </div>
@@ -81,7 +81,7 @@ export default function RoomDetailPage() {
 
       <RoomAmenities />
 
-      <div className="pb-[30px]"></div>
+      <div className="sm:pb-[30px] pb-0"></div>
       <div className="mb-5 w-full h-px bg-gray-300"></div>
 
       <CommentForm id={room.id} />

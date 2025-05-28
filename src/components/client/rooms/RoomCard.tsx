@@ -63,8 +63,8 @@ export default function RoomCard({ room, position, index }: { room: Room; positi
             </div>
             <div>
               <p className="text-gray-500 text-sm truncate dark:text-white">{t('entire_apartment', { location: position?.tinhThanh ?? "Không có tỉnh thành" })}</p>
-              <p className="truncate md:text-xl dark:text-white text-lg">{room.tenPhong}</p>
-              <div className="w-[15%] bg-gray-300 h-[3px] rounded-lg md:my-2 my-4" />
+              <p className="truncate md:text-xl dark:text-white text-base sm:text-lg">{room.tenPhong}</p>
+              <div className="w-full sm:w-[15%] bg-gray-300 h-[3px] rounded-lg md:my-2 my-2" />
               <p className="text-gray-500 text-sm truncate dark:text-white">
                 {t('room_details', { guests: room.khach, bedrooms: room.phongNgu, beds: room.giuong, bathrooms: room.phongTam })}
               </p>

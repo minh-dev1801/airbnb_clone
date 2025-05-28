@@ -103,7 +103,7 @@ export default function Menu() {
   };
 
   return (
-    <div className="flex gap-4">
+    <div className="flex sm:gap-4">
       <ButtonLocale className="hidden lg:flex lg:items-center text-sm text-white" />
 
       <Button

@@ -8,7 +8,7 @@ export default function RoomAmenities() {
   const tValidation = useTranslations('ValidationErrors');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <h3 className="text-xl font-bold">{t('amenities.title')}</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {amenities.map((amenity, index) => (
