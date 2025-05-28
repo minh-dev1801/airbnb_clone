@@ -60,8 +60,33 @@ const DeleteRoomModal: React.FC<DeleteRoomModalProps> = ({
             currency: 'USD',
           })}
         </Descriptions.Item>
-        <Descriptions.Item label="Description">{room.moTa}</Descriptions.Item>
-        <Descriptions.Item label="Image URL">{room.hinhAnh}</Descriptions.Item>
+
+        <Descriptions.Item label="Description">
+          <div
+            style={{
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: 250,
+              cursor: 'pointer',
+            }}
+          >
+            {room.moTa}
+          </div>
+        </Descriptions.Item>
+        <Descriptions.Item label="Image">
+          <div
+            style={{ aspectRatio: '16 / 9', width: '100%', maxHeight: '150px' }}
+          >
+            <img
+              src={room.hinhAnh}
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
+          </div>
+        </Descriptions.Item>
       </Descriptions>
     </Modal>
   );
