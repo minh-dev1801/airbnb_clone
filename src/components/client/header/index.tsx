@@ -37,10 +37,10 @@ const SubHeader = () => {
         opacity: isScrolled ? 0 : 1,
       }}
       transition={{ type: 'spring', stiffness: 120, damping: 10, mass: 0.8 }}
-      className="fixed top-0 left-0 z-50 mx-auto"
+      className="fixed top-0 left-0 z-50 mx-auto px-4 py-4 lg:px-8 lg:py-4"
       style={{ width: '100vw' }}
     >
-      <div className="flex items-center justify-between py-4 px-4 bg-transparent">
+      <div className="flex items-center justify-between bg-transparent">
         <Link
           href="/"
           className="flex items-center gap-3"

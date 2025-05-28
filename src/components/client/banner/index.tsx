@@ -3,11 +3,13 @@
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
-import { useRef, RefObject } from 'react';
+import { useRef, RefObject, useCallback, useEffect } from 'react';
 import { useDebounce, useIntersection } from 'react-use';
 
 export default function Banner() {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const playPromiseRef = useRef<Promise<void> | null>(null);
+  const isMountedRef = useRef(true);
   const intersection = useIntersection(
     videoRef as RefObject<HTMLVideoElement>,
     {
@@ -17,24 +19,78 @@ export default function Banner() {
   const { theme } = useTheme();
   const t = useTranslations('Banner');
 
-  const handleVideo = () => {
+  const handleVideo = useCallback(async () => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !isMountedRef.current) return;
 
-    if (intersection?.isIntersecting && video.paused) {
-      video.play().catch();
-    } else if (!intersection?.isIntersecting && !video.paused) {
-      video.pause();
+    try {
+      if (intersection?.isIntersecting && video.paused) {
+        if (!isMountedRef.current) return;
+
+        if (playPromiseRef.current) {
+          await playPromiseRef.current;
+        }
+
+        if (!isMountedRef.current) return;
+
+        playPromiseRef.current = video.play();
+        await playPromiseRef.current;
+        playPromiseRef.current = null;
+      } else if (!intersection?.isIntersecting && !video.paused) {
+        if (playPromiseRef.current) {
+          await playPromiseRef.current;
+        }
+
+        if (isMountedRef.current && video) {
+          video.pause();
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleVideo:', error);
+      playPromiseRef.current = null;
     }
-  };
+  }, [intersection?.isIntersecting]);
 
   useDebounce(handleVideo, 200, [
     intersection?.isIntersecting,
     videoRef.current,
   ]);
 
+  useEffect(() => {
+    isMountedRef.current = true;
+    const video = videoRef.current;
+
+    return () => {
+      isMountedRef.current = false;
+
+      if (video && !video.paused) {
+        video.pause();
+      }
+
+      if (playPromiseRef.current) {
+        playPromiseRef.current.catch(() => {});
+        playPromiseRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const video = videoRef.current;
+      if (video && !video.paused) {
+        video.pause();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
   return (
-    <div className="relative w-full h-[40vh] md:h-[50vh] lg:h-[60vh] 2xl:h-[80vh]">
+    <div className="relative w-full h-[40vh] md:h-[50vh] lg:h-[80vh]">
       <video
         ref={videoRef}
         loop

@@ -24,7 +24,7 @@ export default function SubBanner() {
       <div className="absolute inset-0 w-full h-full bg-black/20 dark:bg-black/50" />
       <div className="absolute inset-0 flex items-center justify-center">
         <span
-          className="text-white text-2xl sm:text-4xl font-bold dark:text-gray-100"
+          className="text-white text-lg md:text-2xl lg:text-4xl font-bold dark:text-gray-100 w-[60vw]  text-center"
           data-aos="flip-up"
           data-aos-delay="500"
         >
