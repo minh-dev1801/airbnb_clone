@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { Button, Form, message, Modal } from 'antd';
+import { Button, Form, message, Modal, Spin } from 'antd';
 import { PlusCircleOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { http } from '@/app/lib/client/apiAdmin';
@@ -10,17 +10,29 @@ import UserTable from '@/app/components/admin/users/UserTable/UserTable';
 import AddUserModal from '@/app/components/admin/users/AddUserModal/AddUserModal';
 import EditUserModal from '@/app/components/admin/users/EditUserModal/EditUserModal';
 import dayjs from 'dayjs';
+import type { UploadFile } from 'antd/es/upload/interface';
 
 interface User {
   id: number;
   name: string;
   email: string;
   password: string;
-  phone: string;
-  birthday: string;
+  phone: string | null;
+  birthday: string | null;
   avatar: string;
   gender: boolean;
   role: string;
+}
+
+interface UserFormValues {
+  name: string;
+  email: string;
+  password?: string;
+  phone?: string | null;
+  birthday?: string | dayjs.Dayjs | null;
+  gender: boolean;
+  role: string;
+  avatar?: UploadFile[] | undefined;
 }
 
 const UserPage = () => {
@@ -29,23 +41,23 @@ const UserPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-
   const [addForm] = Form.useForm();
   const [editForm] = Form.useForm();
   const queryClient = useQueryClient();
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ['users'],
     queryFn: async () => {
       const data = await http.get<User[]>('/users');
       return [...data].reverse();
     },
-    staleTime: 1000 * 60 * 10, // Tăng lên 10 phút
+    staleTime: 1000 * 60 * 10,
   });
 
   const filteredUsers = useMemo(() => {
+    if (!users) return [];
     return users.filter(
       (user) =>
         user.name.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -65,23 +77,28 @@ const UserPage = () => {
   });
 
   const addUserMutation = useMutation({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mutationFn: (newUser: any) => http.post<User>('/users', newUser),
+    mutationFn: (
+      newUser: Omit<User, 'id' | 'avatar'> & { avatar?: string | null }
+    ) => http.post<User>('/users', newUser),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       message.success('User added successfully');
       setIsAddModalOpen(false);
       addForm.resetFields();
     },
-    onError: () => {
-      message.error('Failed to add user');
+    onError: (error: any) => {
+      message.error(error?.response?.data?.message || 'Failed to add user');
     },
   });
 
   const updateUserMutation = useMutation({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mutationFn: ({ id, updatedUser }: { id: number; updatedUser: any }) =>
-      http.put(`/users/${id}`, updatedUser),
+    mutationFn: ({
+      id,
+      updatedUser,
+    }: {
+      id: number;
+      updatedUser: Partial<User>;
+    }) => http.put(`/users/${id}`, updatedUser),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       message.success('User updated successfully');
@@ -90,8 +107,8 @@ const UserPage = () => {
       setSelectedUser(null);
       setAvatarPreview(null);
     },
-    onError: () => {
-      message.error('Failed to update user');
+    onError: (error: any) => {
+      message.error(error?.response?.data?.message || 'Failed to update user');
     },
   });
 
@@ -127,14 +144,22 @@ const UserPage = () => {
         editForm.setFieldsValue({
           name: userDetails.name || '',
           email: userDetails.email || '',
-          password: userDetails.password || '',
-          phone: userDetails.phone || '',
+          phone: userDetails.phone || null,
           birthday: isValidDate ? dayjs(userDetails.birthday) : null,
           gender: userDetails.gender,
           role: userDetails.role || 'USER',
+          avatar: userDetails.avatar
+            ? [
+                {
+                  uid: '-1',
+                  name: 'avatar',
+                  status: 'done',
+                  url: userDetails.avatar,
+                },
+              ]
+            : [],
         });
         setAvatarPreview(userDetails.avatar || null);
-
         setIsEditModalOpen(true);
       }
     },
@@ -146,38 +171,82 @@ const UserPage = () => {
   }, []);
 
   const handleAddUser = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (values: any) => {
-      const newUser = {
-        name: values.name,
-        email: values.email,
-        password: values.password || '',
-        phone: values.phone || null,
-        birthday: values.birthday ? values.birthday.format('YYYY-MM-DD') : '',
-        avatar: null,
-        gender: values.gender,
-        role: values.role,
-      };
-      addUserMutation.mutate(newUser);
+    (values: UserFormValues) => {
+      const newUser: Omit<User, 'id' | 'avatar'> & { avatar?: string | null } =
+        {
+          name: values.name,
+          email: values.email,
+          password: values.password || '',
+          phone: values.phone || null,
+          birthday: values.birthday
+            ? dayjs(values.birthday).format('YYYY-MM-DD')
+            : null,
+          gender: values.gender,
+          role: values.role,
+          avatar: null,
+        };
+
+      if (
+        values.avatar &&
+        values.avatar.length > 0 &&
+        values.avatar[0]?.originFileObj
+      ) {
+        const formData = new FormData();
+        formData.append('avatar', values.avatar[0].originFileObj as File);
+        http
+          .post<{ url: string }>('/upload-avatar', formData)
+          .then((uploadResponse) => {
+            newUser.avatar = uploadResponse.url;
+            addUserMutation.mutate(newUser);
+          })
+          .catch(() => {
+            message.error('Failed to upload avatar');
+          });
+      } else {
+        addUserMutation.mutate(newUser);
+      }
     },
     [addUserMutation]
   );
 
   const handleUpdateUser = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async (values: any) => {
+    async (values: UserFormValues) => {
       if (!selectedUser) return;
 
-      const updatedUser = {
+      const updatedUser: Partial<User> = {
         id: selectedUser.id,
         name: values.name,
         email: values.email,
-        password: values.password || selectedUser.password,
         phone: values.phone || null,
-        birthday: values.birthday ? values.birthday.format('YYYY-MM-DD') : '',
+        birthday: values.birthday
+          ? dayjs(values.birthday).format('YYYY-MM-DD')
+          : null,
         gender: values.gender,
         role: values.role,
       };
+
+      if (values.password) {
+        updatedUser.password = values.password;
+      }
+
+      if (
+        values.avatar &&
+        values.avatar.length > 0 &&
+        values.avatar[0]?.originFileObj
+      ) {
+        const formData = new FormData();
+        formData.append('avatar', values.avatar[0].originFileObj as File);
+        try {
+          const uploadResponse = await http.post<{ url: string }>(
+            '/upload-avatar',
+            formData
+          );
+          updatedUser.avatar = uploadResponse.url;
+        } catch (error) {
+          message.error('Failed to upload avatar');
+          return;
+        }
+      }
 
       updateUserMutation.mutate({ id: selectedUser.id, updatedUser });
     },
@@ -195,31 +264,8 @@ const UserPage = () => {
 
   if (isLoading) {
     return (
-      <div className="p-2">
-        <div className="grid grid-cols-2 justify-between items-center mb-6">
-          <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
-          <div className="flex justify-end items-center space-x-4">
-            <div className="h-10 bg-gray-200 rounded w-48 animate-pulse"></div>
-            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg overflow-hidden">
-          <div className="p-4">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className="flex items-center py-2 border-b border-gray-200"
-              >
-                <div className="w-10 h-10 bg-gray-200 rounded-full mr-4 animate-pulse"></div>
-                <div className="flex-1">
-                  <div className="h-4 bg-gray-200 rounded w-1/3 mb-2 animate-pulse"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
-                </div>
-                <div className="h-8 bg-gray-200 rounded w-20 animate-pulse"></div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="p-2 flex justify-center items-center h-[calc(100vh-200px)]">
+        <Spin size="large" tip="Loading users..." />
       </div>
     );
   }
@@ -239,6 +285,10 @@ const UserPage = () => {
               borderColor: '#fe6b6e',
               fontSize: '16px',
               padding: '20px',
+              lineHeight: 'initial',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               transition: 'background-color 0.2s',
             }}
             onMouseEnter={(e) =>
@@ -263,16 +313,20 @@ const UserPage = () => {
       {isAddModalOpen && (
         <AddUserModal
           visible={isAddModalOpen}
-          onCancel={() => setIsAddModalOpen(false)}
+          onCancel={() => {
+            setIsAddModalOpen(false);
+          }}
           onSubmit={handleAddUser}
           form={addForm}
         />
       )}
 
-      {isEditModalOpen && (
+      {isEditModalOpen && selectedUser && (
         <EditUserModal
           visible={isEditModalOpen}
-          onCancel={() => setIsEditModalOpen(false)}
+          onCancel={() => {
+            setIsEditModalOpen(false);
+          }}
           onSubmit={handleUpdateUser}
           form={editForm}
           selectedUser={selectedUser}
@@ -302,21 +356,18 @@ const UserPage = () => {
         <p>Are you sure you want to delete this user?</p>
         {userToDelete && (
           <div>
-            <div>
-              {' '}
-              <p>
-                <strong>ID:</strong> {userToDelete.id}
-              </p>
-              <p>
-                <strong>Name:</strong> {userToDelete.name}
-              </p>
-              <p>
-                <strong>Email:</strong> {userToDelete.email}
-              </p>
-              <p>
-                <strong>Role:</strong> {userToDelete.role}
-              </p>
-            </div>
+            <p>
+              <strong>ID:</strong> {userToDelete.id}
+            </p>
+            <p>
+              <strong>Name:</strong> {userToDelete.name}
+            </p>
+            <p>
+              <strong>Email:</strong> {userToDelete.email}
+            </p>
+            <p>
+              <strong>Role:</strong> {userToDelete.role}
+            </p>
           </div>
         )}
       </Modal>

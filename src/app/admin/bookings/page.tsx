@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { message, Button, Space, TableColumnsType } from 'antd';
+import { message, Button, Space, TableColumnsType, Spin } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { http } from '@/app/lib/client/apiAdmin';
@@ -158,16 +158,15 @@ const BookingPage = () => {
   }, []);
 
   const handleSave = useCallback(
-    (formData: Booking) => {
+    async (formData: Booking): Promise<void> => {
       if (modalMode === 'edit' && selectedBooking) {
-        updateBookingMutation.mutate({
+        await updateBookingMutation.mutateAsync({
           id: selectedBooking.id,
           updatedBooking: formData,
         });
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id, ...newBooking } = formData;
-        addBookingMutation.mutate(newBooking);
+        await addBookingMutation.mutateAsync(newBooking);
       }
     },
     [modalMode, selectedBooking, addBookingMutation, updateBookingMutation]
@@ -242,6 +241,11 @@ const BookingPage = () => {
               icon={<DeleteOutlined />}
               danger
               onClick={() => handleDelete(record)}
+              style={{
+                backgroundColor: '#ff4d4f',
+                borderColor: '#ff4d4f',
+                color: '#fff',
+              }}
             >
               Delete
             </Button>
@@ -251,7 +255,13 @@ const BookingPage = () => {
     ],
     [handleEdit, handleDelete]
   );
-
+  if (isLoading) {
+    return (
+      <div className="p-2 flex justify-center items-center h-[calc(100vh-200px)]">
+        <Spin size="large" tip="Loading users..." />
+      </div>
+    );
+  }
   return (
     <>
       <BookingTable
@@ -271,7 +281,6 @@ const BookingPage = () => {
           addBookingMutation.isPending || updateBookingMutation.isPending
         }
         mode={modalMode}
-        setEditForm={setEditForm}
         handleSave={handleSave}
         closeModal={() => {
           setIsEditModalOpen(false);

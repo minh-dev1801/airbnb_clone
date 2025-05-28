@@ -1,11 +1,13 @@
-import React from 'react';
-import { Modal, InputNumber, DatePicker } from 'antd';
+import React, { useEffect } from 'react';
+import { Modal, InputNumber, DatePicker, message } from 'antd';
 import dayjs from 'dayjs';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useQuery } from '@tanstack/react-query';
+import { debounce } from 'lodash';
 import { http } from '@/app/lib/client/apiAdmin';
 import { Booking, RoomInfo, UserInfo } from '@/app/admin/bookings/page';
+import { AxiosError } from 'axios';
 
 interface EditBookingModalProps {
   isEditModalOpen: boolean;
@@ -13,13 +15,13 @@ interface EditBookingModalProps {
   editForm: Booking | null;
   editing: boolean;
   mode: 'edit' | 'add';
-  setEditForm: (form: Booking | null) => void;
-  handleSave: (formData: Booking) => void;
+  handleSave: (formData: Booking) => Promise<void>;
   closeModal: () => void;
 }
 
 const EditBookingModal: React.FC<EditBookingModalProps> = ({
   isEditModalOpen,
+  selectedBooking,
   editForm,
   editing,
   mode,
@@ -33,49 +35,126 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
       ngayDen: editForm?.ngayDen || '',
       ngayDi: editForm?.ngayDi || '',
       soLuongKhach: editForm?.soLuongKhach || 1,
-      id: editForm?.id || 0,
+      id: mode === 'edit' ? selectedBooking?.id || 0 : 0,
     },
     enableReinitialize: true,
     validationSchema: Yup.object({
-      maPhong: Yup.number().min(1, 'Invalid Room ID').required('Required'),
-      maNguoiDung: Yup.number()
-        .min(1, 'Invalid User ID')
-        .required('Required')
-        .test('user-exists', 'User ID does not exist', async (value) => {
-          if (!value || value <= 0) return false;
+      maPhong: Yup.number()
+        .min(1, 'Room ID must be a positive number.')
+        .required('Please enter a room ID.')
+        .test('room-exists', 'Room ID not recognized.', async function (value) {
+          if (!value || value <= 0) {
+            return true;
+          }
           try {
-            const response = await http.get<UserInfo>(`/users/${value}`);
-            return !!response;
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          } catch (error) {
-            return false;
+            await http.get<RoomInfo>(`/phong-thue/${value}`);
+            return true;
+          } catch (error: any) {
+            const axiosError = error as AxiosError;
+            if (
+              axiosError.response &&
+              (axiosError.response.status === 404 ||
+                axiosError.response.status === 400)
+            ) {
+              return this.createError({
+                message: 'Room ID does not exist or is invalid.',
+              });
+            }
+            return this.createError({
+              message: 'Error checking room ID. Please try again.',
+            });
           }
         }),
-      ngayDen: Yup.string().required('Check-in date is required'),
-      ngayDi: Yup.string().required('Check-out date is required'),
+      maNguoiDung: Yup.number()
+        .min(1, 'User ID must be a positive number.')
+        .required('Please enter a user ID.')
+        .test('user-exists', 'User ID not recognized.', async function (value) {
+          if (!value || value <= 0) {
+            return true;
+          }
+          try {
+            await http.get<UserInfo>(`/users/${value}`);
+            return true;
+          } catch (error: any) {
+            const axiosError = error as AxiosError;
+            if (
+              axiosError.response &&
+              (axiosError.response.status === 404 ||
+                axiosError.response.status === 400)
+            ) {
+              return this.createError({
+                message: 'User ID does not exist or is invalid.',
+              });
+            }
+            return this.createError({
+              message: 'Error checking user ID. Please try again.',
+            });
+          }
+        }),
+      ngayDen: Yup.string().required('Please select a check-in date.'),
+      ngayDi: Yup.string()
+        .required('Please select a check-out date.')
+        .test(
+          'is-after-check-in',
+          'Check-out date must be after check-in date.',
+          function (value, context) {
+            if (!value || !context.parent.ngayDen) return true;
+            return dayjs(value).isAfter(dayjs(context.parent.ngayDen));
+          }
+        ),
       soLuongKhach: Yup.number()
-        .min(1, 'At least 1 guest')
-        .required('Required'),
+        .min(1, 'Number of guests must be at least 1.')
+        .required('Please enter the number of guests.'),
     }),
-    onSubmit: (values) => {
-      handleSave(values);
+    onSubmit: async (values) => {
+      const submissionData = {
+        ...values,
+        id: mode === 'edit' ? selectedBooking?.id || values.id : values.id,
+      };
+      try {
+        await handleSave(submissionData);
+        message.success(
+          mode === 'edit'
+            ? 'Booking updated successfully!'
+            : 'Booking added successfully!'
+        );
+        formik.resetForm();
+        closeModal();
+      } catch (error: any) {
+        const apiError = error.response?.data;
+        if (apiError && apiError.field && apiError.message) {
+          formik.setFieldError(apiError.field, apiError.message);
+        } else if (apiError && apiError.message) {
+          message.error(apiError.message);
+        } else {
+          message.error(
+            'An error occurred while saving the booking. Please try again.'
+          );
+        }
+      }
     },
   });
+
+  const debouncedSetFieldValue = debounce(
+    (field: keyof Booking, value: any) => {
+      formik.setFieldValue(field, value === null ? 0 : value);
+    },
+    300
+  );
 
   const {
     data: roomInfo,
     isLoading: roomLoading,
-    isError,
+    isError: roomQueryIsError,
+    error: roomQueryError,
   } = useQuery({
-    queryKey: ['room', formik.values.maPhong],
+    queryKey: ['roomInfoValidation', formik.values.maPhong],
     queryFn: async () => {
-      const res = await http.get<RoomInfo>(
-        `/phong-thue/${formik.values.maPhong}`
-      );
-      return res;
+      if (!formik.values.maPhong || formik.values.maPhong <= 0) return null;
+      return http.get<RoomInfo>(`/phong-thue/${formik.values.maPhong}`);
     },
     enabled: !!formik.values.maPhong && formik.values.maPhong > 0,
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 60 * 5,
     retry: 1,
     refetchOnWindowFocus: false,
   });
@@ -83,246 +162,308 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
   const {
     data: userInfo,
     isLoading: userLoading,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    isError: userError,
+    isError: userQueryIsError,
+    error: userQueryErrorObject,
   } = useQuery({
-    queryKey: ['user', formik.values.maNguoiDung],
+    queryKey: ['userInfoValidation', formik.values.maNguoiDung],
     queryFn: async () => {
-      const res = await http.get<UserInfo>(
-        `/users/${formik.values.maNguoiDung}`
-      );
-      return res;
+      if (!formik.values.maNguoiDung || formik.values.maNguoiDung <= 0)
+        return null;
+      return http.get<UserInfo>(`/users/${formik.values.maNguoiDung}`);
     },
     enabled: !!formik.values.maNguoiDung && formik.values.maNguoiDung > 0,
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 60 * 5,
     retry: 1,
     refetchOnWindowFocus: false,
   });
+
+  useEffect(() => {
+    if (!isEditModalOpen) {
+      formik.resetForm();
+    }
+  }, [isEditModalOpen]);
 
   return (
     <Modal
       title={
         <span className="text-xl font-semibold text-[#fe6b6e]">
-          {mode === 'edit' ? 'Edit Booking Details' : 'Add New Booking'}
+          {mode === 'edit' ? 'Edit Booking' : 'Add New Booking'}
         </span>
       }
       open={isEditModalOpen}
       onOk={() => formik.handleSubmit()}
-      confirmLoading={editing}
-      onCancel={closeModal}
+      confirmLoading={formik.isSubmitting || editing}
+      onCancel={() => {
+        formik.resetForm();
+        closeModal();
+      }}
       okText={mode === 'edit' ? 'Save' : 'Add'}
       cancelText="Cancel"
       okButtonProps={{
-        style: {
-          backgroundColor: '#fe6b6e',
-          borderColor: '#fe6b6e',
-        },
+        style: { backgroundColor: '#fe6b6e', borderColor: '#fe6b6e' },
         disabled:
-          editing ||
-          formik.isSubmitting ||
-          (formik.values.maNguoiDung > 0 &&
-            !userLoading &&
-            (!userInfo || isError)),
+          formik.isSubmitting || !formik.dirty || !formik.isValid || editing,
       }}
-      cancelButtonProps={{
-        className: 'border-gray-300 hover:border-gray-400 text-gray-700',
-      }}
-      width={700}
+      destroyOnHidden
+      width={500}
       style={{ top: 20 }}
     >
-      <div className="mt-4">
-        <div className="grid grid-cols-2 gap-6">
+      <form onSubmit={formik.handleSubmit} className="mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <div>
-            <label className="block mb-3">Room ID</label>
+            <label htmlFor="maPhong" className="block mb-2">
+              Room ID
+            </label>
             <InputNumber
+              id="maPhong"
+              name="maPhong"
               value={formik.values.maPhong}
-              onChange={(value) => {
-                formik.setFieldValue('maPhong', value || 0);
-              }}
-              onBlur={formik.handleBlur}
+              onChange={(value) => debouncedSetFieldValue('maPhong', value)}
+              onBlur={() => formik.setFieldTouched('maPhong', true)}
               min={0}
               className="w-full"
-              style={{ minWidth: '100%' }}
+              style={{ width: '100%' }}
+              status={
+                formik.touched.maPhong && formik.errors.maPhong ? 'error' : ''
+              }
             />
             {formik.touched.maPhong && formik.errors.maPhong && (
-              <div className="text-red-500 text-sm mt-1">
+              <div className="text-red-500 text-xs mt-1">
                 {formik.errors.maPhong}
               </div>
             )}
-            {formik.values.maPhong > 0 &&
-              !roomLoading &&
-              (!roomInfo || isError) && (
-                <div className="text-red-500 text-sm mt-1">
-                  Room ID does not exist
-                </div>
-              )}
           </div>
 
           <div>
-            <label className="block mb-3">User ID</label>
+            <label htmlFor="maNguoiDung" className="block mb-2">
+              User ID
+            </label>
             <InputNumber
+              id="maNguoiDung"
+              name="maNguoiDung"
               value={formik.values.maNguoiDung}
-              onChange={(value) => {
-                formik.setFieldValue('maNguoiDung', value || 0);
-              }}
-              onBlur={formik.handleBlur}
+              onChange={(value) => debouncedSetFieldValue('maNguoiDung', value)}
+              onBlur={() => formik.setFieldTouched('maNguoiDung', true)}
               min={0}
               className="w-full"
-              style={{ minWidth: '100%' }}
+              style={{ width: '100%' }}
+              status={
+                formik.touched.maNguoiDung && formik.errors.maNguoiDung
+                  ? 'error'
+                  : ''
+              }
             />
             {formik.touched.maNguoiDung && formik.errors.maNguoiDung && (
-              <div className="text-red-500 text-sm mt-1">
+              <div className="text-red-500 text-xs mt-1">
                 {formik.errors.maNguoiDung}
               </div>
             )}
-            {formik.values.maNguoiDung > 0 &&
-              !userLoading &&
-              (!userInfo || isError) && (
-                <div className="text-red-500 text-sm mt-1">
-                  User ID does not exist
-                </div>
-              )}
           </div>
 
           <div>
-            <label className="block mb-3">Check-in Date</label>
+            <label htmlFor="ngayDen" className="block mb-2">
+              Check-in Date
+            </label>
             <DatePicker
+              id="ngayDen"
+              name="ngayDen"
               value={
                 formik.values.ngayDen ? dayjs(formik.values.ngayDen) : null
               }
               onChange={(date) =>
-                formik.setFieldValue('ngayDen', date ? date.toISOString() : '')
+                formik.setFieldValue(
+                  'ngayDen',
+                  date ? date.toISOString() : null
+                )
               }
-              onBlur={formik.handleBlur}
+              onBlur={() => formik.setFieldTouched('ngayDen', true)}
               className="w-full"
-              style={{ minWidth: '100%' }}
-              format="YYYY-MM-DD"
+              style={{ width: '100%' }}
+              format="DD/MM/YYYY"
+              disabledDate={(current) =>
+                current && current < dayjs().startOf('day')
+              }
+              status={
+                formik.touched.ngayDen && formik.errors.ngayDen ? 'error' : ''
+              }
             />
             {formik.touched.ngayDen && formik.errors.ngayDen && (
-              <div className="text-red-500 text-sm mt-1">
+              <div className="text-red-500 text-xs mt-1">
                 {formik.errors.ngayDen}
               </div>
             )}
           </div>
 
           <div>
-            <label className="block mb-3">Check-out Date</label>
+            <label htmlFor="ngayDi" className="block mb-2">
+              Check-out Date
+            </label>
             <DatePicker
+              id="ngayDi"
+              name="ngayDi"
               value={formik.values.ngayDi ? dayjs(formik.values.ngayDi) : null}
               onChange={(date) =>
-                formik.setFieldValue('ngayDi', date ? date.toISOString() : '')
+                formik.setFieldValue('ngayDi', date ? date.toISOString() : null)
               }
-              onBlur={formik.handleBlur}
+              onBlur={() => formik.setFieldTouched('ngayDi', true)}
               className="w-full"
-              style={{ minWidth: '100%' }}
-              format="YYYY-MM-DD"
+              style={{ width: '100%' }}
+              format="DD/MM/YYYY"
+              disabledDate={(current) =>
+                current &&
+                ((formik.values.ngayDen &&
+                  current <
+                    dayjs(formik.values.ngayDen)
+                      .add(1, 'day')
+                      .startOf('day')) ||
+                  current < dayjs().startOf('day'))
+              }
+              status={
+                formik.touched.ngayDi && formik.errors.ngayDi ? 'error' : ''
+              }
             />
             {formik.touched.ngayDi && formik.errors.ngayDi && (
-              <div className="text-red-500 text-sm mt-1">
+              <div className="text-red-500 text-xs mt-1">
                 {formik.errors.ngayDi}
               </div>
             )}
           </div>
 
-          <div>
-            <label className="block mb-3">Number of Guests</label>
+          <div className="">
+            <label htmlFor="soLuongKhach" className="block mb-2">
+              Number of Guests
+            </label>
             <InputNumber
+              id="soLuongKhach"
+              name="soLuongKhach"
               value={formik.values.soLuongKhach}
               onChange={(value) =>
-                formik.setFieldValue('soLuongKhach', value || 0)
+                formik.setFieldValue('soLuongKhach', value === null ? 0 : value)
               }
-              onBlur={formik.handleBlur}
-              min={0}
+              onBlur={() => formik.setFieldTouched('soLuongKhach', true)}
+              min={1}
               className="w-full"
-              style={{ minWidth: '100%' }}
+              style={{ width: '100%' }}
+              status={
+                formik.touched.soLuongKhach && formik.errors.soLuongKhach
+                  ? 'error'
+                  : ''
+              }
             />
             {formik.touched.soLuongKhach && formik.errors.soLuongKhach && (
-              <div className="text-red-500 text-sm mt-1">
+              <div className="text-red-500 text-xs mt-1">
                 {formik.errors.soLuongKhach}
               </div>
             )}
           </div>
         </div>
-
-        <div className="mt-6 pt-4">
-          <h3 className="text-lg font-medium text-gray-800 mb-4">
-            Booking Summary
-          </h3>
-          <div className="grid grid-cols-2 gap-6">
-            <div>
+        {(roomInfo ||
+          userInfo ||
+          formik.values.ngayDen ||
+          formik.values.ngayDi ||
+          formik.values.soLuongKhach) && (
+          <div className="mt-6 pt-4 border-t">
+            <h3 className="text-base font-medium text-gray-800 mb-3">
+              Booking Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-3 gap-y-3">
               {roomLoading ? (
-                <p className="text-sm text-gray-500">
+                <p className="text-xs text-gray-500">
                   Loading room information...
                 </p>
               ) : roomInfo ? (
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-gray-700">
+                <div>
+                  <p className="font-medium text-gray-700 mb-2">
                     Room: {roomInfo.tenPhong}
                   </p>
-                  <p className="text-sm text-gray-600">
-                    Price: ${roomInfo.giaTien.toLocaleString()}
+                  <p className="font-medium text-gray-600">
+                    Price per night: ${roomInfo.giaTien?.toLocaleString()}
                   </p>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">
-                  No room information available
-                </p>
-              )}
-              <div className="space-y-2 mt-2">
-                <p className="text-sm text-gray-600">
-                  Check-in:{' '}
-                  {formik.values.ngayDen
-                    ? new Date(formik.values.ngayDen).toLocaleDateString(
-                        'en-GB'
-                      )
-                    : '-'}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Check-out:{' '}
-                  {formik.values.ngayDi
-                    ? new Date(formik.values.ngayDi).toLocaleDateString('en-GB')
-                    : '-'}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Guests: {formik.values.soLuongKhach || '-'}
-                </p>
-              </div>
-            </div>
-
-            <div>
-              {userLoading ? (
-                <p className="text-sm text-gray-500">
-                  Loading user information...
-                </p>
-              ) : userInfo ? (
-                <div className="flex items-center space-x-4">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={userInfo.avatar || '/default-avatar.png'}
-                    alt="User Avatar"
-                    className="w-12 h-12 rounded-full object-cover border border-gray-200"
-                  />
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-gray-700">
-                      {userInfo.name}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Email: {userInfo.email}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Phone: {userInfo.phone}
-                    </p>
+                  <div className="md:col-span-2">
+                    {formik.values.ngayDen && (
+                      <p className=" font-medium text-gray-600">
+                        Check in:{' '}
+                        {dayjs(formik.values.ngayDen).format('DD/MM/YYYY')}
+                      </p>
+                    )}
+                    {formik.values.ngayDi && (
+                      <p className="font-medium text-gray-600">
+                        Check out:{' '}
+                        {dayjs(formik.values.ngayDi).format('DD/MM/YYYY')}
+                      </p>
+                    )}
+                    {formik.values.soLuongKhach > 0 && (
+                      <p className="font-medium text-gray-600">
+                        Number of Guests: {formik.values.soLuongKhach}
+                      </p>
+                    )}
+                    {roomInfo &&
+                      formik.values.ngayDen &&
+                      formik.values.ngayDi && (
+                        <p className="font-medium text-gray-600">
+                          Total:{' '}
+                          {(
+                            roomInfo.giaTien *
+                            dayjs(formik.values.ngayDi).diff(
+                              dayjs(formik.values.ngayDen),
+                              'day'
+                            )
+                          ).toLocaleString()}
+                          $
+                        </p>
+                      )}
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">
-                  No user information available
+                formik.values.maPhong > 0 &&
+                !formik.errors.maPhong && (
+                  <p className="text-xs text-orange-500">
+                    No information available for this room ID.
+                  </p>
+                )
+              )}
+
+              {userLoading ? (
+                <p className="text-xs text-gray-500">
+                  Loading user information...
                 </p>
+              ) : userInfo ? (
+                <div className="flex items-center space-x-3">
+                  <img
+                    src={userInfo.avatar || '/default-avatar.png'}
+                    alt="User Avatar"
+                    className="w-10 h-10 rounded-full object-cover border"
+                    onError={(e) => {
+                      e.currentTarget.src = '/default-avatar.png';
+                    }}
+                  />
+                  <div className="">
+                    <p className="text-sm font-semibold text-gray-700">
+                      {userInfo.name}
+                    </p>
+                    <p className="font-medium text-gray-600 ">
+                      Email:{' '}
+                      <span className="whitespace-wrap">{userInfo.email}</span>
+                    </p>
+                    {userInfo.phone && (
+                      <p className="font-medium text-gray-600 ">
+                        Phone: {userInfo.phone}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                formik.values.maNguoiDung > 0 &&
+                !formik.errors.maNguoiDung && (
+                  <p className="text-xs text-orange-500">
+                    No information available for this user ID.
+                  </p>
+                )
               )}
             </div>
           </div>
-        </div>
-      </div>
+        )}
+      </form>
     </Modal>
   );
 };
