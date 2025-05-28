@@ -120,7 +120,7 @@ export default function LoginModal({
               <Button
                 type="submit"
                 disabled={isSignInPending}
-                className="w-full bg-rose-500 hover:bg-rose-600 rounded-lg py-2 cursor-pointer"
+                className="w-full bg-rose-500 hover:bg-rose-600 rounded-lg py-2 cursor-pointer text-white"
               >
                 {isSignInPending ? (
                   <div className="flex items-center gap-2">
