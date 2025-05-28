@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Modal,
   Form,
@@ -16,7 +16,7 @@ import * as Yup from 'yup';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Room } from '@/app/types/room/room';
 import { http } from '@/app/lib/client/apiAdmin';
-import { useEffect, useMemo, useState } from 'react';
+import { Span } from 'next/dist/trace';
 
 interface RoomFormModalProps {
   isOpen: boolean;
@@ -215,32 +215,28 @@ const RoomFormModal: React.FC<RoomFormModalProps> = ({
     formik.values.maViTri,
     formik.touched.maViTri,
     currentRoom,
-    formik,
   ]);
 
-  const amenityToFieldMap = useMemo<{ [key: string]: keyof Room }>(
-    () => ({
-      Wifi: 'wifi',
-      TV: 'tivi',
-      'Air conditioning': 'dieuHoa',
-      'Washing machine': 'mayGiat',
-      Iron: 'banLa',
-      Kitchen: 'bep',
-      Parking: 'doXe',
-      Pool: 'hoBoi',
-      Ironing: 'banUi',
-    }),
-    []
-  );
+  const amenityToFieldMap: { [key: string]: keyof Room } = {
+    Wifi: 'wifi',
+    TV: 'tivi',
+    'Air conditioning': 'dieuHoa',
+    'Washing machine': 'mayGiat',
+    Iron: 'banLa',
+    Kitchen: 'bep',
+    Parking: 'doXe',
+    Pool: 'hoBoi',
+    Ironing: 'banUi',
+  };
 
   useEffect(() => {
     if (currentRoom && isOpen) {
       const selectedAmenities = Object.entries(amenityToFieldMap)
-        .filter(([, field]) => currentRoom[field] === true)
+        .filter(([_, field]) => currentRoom[field] === true)
         .map(([amenity]) => amenity);
       formik.setFieldValue('tienNghi', selectedAmenities, false);
     }
-  }, [currentRoom, isOpen, formik.setFieldValue, amenityToFieldMap, formik]);
+  }, [currentRoom, isOpen, formik.setFieldValue]);
 
   const handleAmenitiesChange = (selectedAmenities: string[]) => {
     formik.setFieldValue('tienNghi', selectedAmenities);
@@ -586,7 +582,6 @@ const RoomFormModal: React.FC<RoomFormModalProps> = ({
             {isImagePreviewable &&
             formik.values.hinhAnh &&
             !formik.errors.hinhAnh ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={formik.values.hinhAnh}
                 alt="Preview image"

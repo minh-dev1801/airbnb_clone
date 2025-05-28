@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 'use client';
 
 import React from 'react';
@@ -25,7 +25,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
       email: '',
       password: '',
       phone: '',
-      birthday: null,
+      birthday: null as string | null,
       gender: true,
       role: 'USER',
     },
@@ -36,7 +36,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
       phone: Yup.string()
         .matches(/^[0-9]{9,11}$/, 'Phone must be 9-11 digits')
         .nullable(),
-      birthday: Yup.date().required('Birthday is required'),
+      birthday: Yup.date().required('Birthday is required').nullable(),
       gender: Yup.boolean().required('Gender is required'),
       role: Yup.string().oneOf(['ADMIN', 'USER']).required('Role is required'),
     }),
@@ -53,7 +53,10 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
         </span>
       }
       open={visible}
-      onCancel={onCancel}
+      onCancel={() => {
+        formik.resetForm();
+        onCancel();
+      }}
       onOk={formik.submitForm}
       okText="Add"
       cancelText="Cancel"
@@ -134,11 +137,14 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
               onChange={(date) =>
                 formik.setFieldValue('birthday', date?.toISOString() || null)
               }
+              onBlur={() => formik.setFieldTouched('birthday', true)}
               className="w-full"
               format="YYYY-MM-DD"
             />
             {formik.touched.birthday && formik.errors.birthday && (
-              <div className="text-red-500">{formik.errors.birthday}</div>
+              <div className="text-red-500">
+                {formik.errors.birthday as string}
+              </div>
             )}
           </div>
           <div>
@@ -146,6 +152,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
             <Select
               value={formik.values.role}
               onChange={(value) => formik.setFieldValue('role', value)}
+              onBlur={() => formik.setFieldTouched('role', true)}
               className="w-full"
             >
               <Select.Option value="ADMIN">ADMIN</Select.Option>
@@ -162,6 +169,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
           <Radio.Group
             value={formik.values.gender}
             onChange={(e) => formik.setFieldValue('gender', e.target.value)}
+            onBlur={() => formik.setFieldTouched('gender', true)}
           >
             <Radio value={true}>Male</Radio>
             <Radio value={false}>Female</Radio>

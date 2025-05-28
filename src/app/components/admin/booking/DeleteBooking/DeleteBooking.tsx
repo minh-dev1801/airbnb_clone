@@ -3,6 +3,7 @@
 import React, { memo } from 'react';
 import { Modal } from 'antd';
 import { Booking, RoomInfo, UserInfo } from '@/app/admin/bookings/page';
+import dayjs from 'dayjs';
 
 interface DeleteBookingModalProps {
   isDeleteModalOpen: boolean;
@@ -74,10 +75,12 @@ const DeleteBookingModal: React.FC<DeleteBookingModalProps> = memo(
                     <strong>Guests:</strong>{' '}
                     {selectedBooking?.soLuongKhach || 'N/A'}
                   </p>
+                  <p className="text-sm text-gray-600">
+               
+                  </p>
                 </div>
                 {userInfo && (
                   <div className="flex-1 flex items-center space-x-3">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={userInfo.avatar || '/default-avatar.png'}
                       alt="User Avatar"
