@@ -32,8 +32,8 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
     initialValues: {
       maPhong: editForm?.maPhong || 0,
       maNguoiDung: editForm?.maNguoiDung || 0,
-      ngayDen: editForm?.ngayDen || '',
-      ngayDi: editForm?.ngayDi || '',
+      ngayDen: editForm?.ngayDen ? dayjs(editForm.ngayDen).toISOString() : '',
+      ngayDi: editForm?.ngayDi ? dayjs(editForm.ngayDi).toISOString() : '',
       soLuongKhach: editForm?.soLuongKhach || 1,
       id: mode === 'edit' ? selectedBooking?.id || 0 : 0,
     },
@@ -109,8 +109,13 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
     onSubmit: async (values) => {
       const submissionData = {
         ...values,
+        ngayDen: values.ngayDen
+          ? dayjs(values.ngayDen).format('YYYY-MM-DD')
+          : '',
+        ngayDi: values.ngayDi ? dayjs(values.ngayDi).format('YYYY-MM-DD') : '',
         id: mode === 'edit' ? selectedBooking?.id || values.id : values.id,
       };
+      console.log('Submission data:', submissionData); // Log dữ liệu gửi đi
       try {
         await handleSave(submissionData);
         message.success(
@@ -121,6 +126,7 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
         formik.resetForm();
         closeModal();
       } catch (error: any) {
+        console.log('Error saving booking:', error.response?.data); // Log lỗi
         const apiError = error.response?.data;
         if (apiError && apiError.field && apiError.message) {
           formik.setFieldError(apiError.field, apiError.message);
@@ -262,19 +268,18 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
 
           <div>
             <label htmlFor="ngayDen" className="block mb-2">
-              Check-in Date
+              Check in
             </label>
             <DatePicker
               id="ngayDen"
               name="ngayDen"
               value={
-                formik.values.ngayDen ? dayjs(formik.values.ngayDen) : null
+                formik.values.ngayDen && dayjs(formik.values.ngayDen).isValid()
+                  ? dayjs(formik.values.ngayDen)
+                  : null
               }
               onChange={(date) =>
-                formik.setFieldValue(
-                  'ngayDen',
-                  date ? date.toISOString() : null
-                )
+                formik.setFieldValue('ngayDen', date ? date.toISOString() : '')
               }
               onBlur={() => formik.setFieldTouched('ngayDen', true)}
               className="w-full"
@@ -287,6 +292,7 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
                 formik.touched.ngayDen && formik.errors.ngayDen ? 'error' : ''
               }
             />
+
             {formik.touched.ngayDen && formik.errors.ngayDen && (
               <div className="text-red-500 text-xs mt-1">
                 {formik.errors.ngayDen}
@@ -296,14 +302,18 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
 
           <div>
             <label htmlFor="ngayDi" className="block mb-2">
-              Check-out Date
+              Check out
             </label>
             <DatePicker
               id="ngayDi"
               name="ngayDi"
-              value={formik.values.ngayDi ? dayjs(formik.values.ngayDi) : null}
+              value={
+                formik.values.ngayDi && dayjs(formik.values.ngayDi).isValid()
+                  ? dayjs(formik.values.ngayDi)
+                  : null
+              }
               onChange={(date) =>
-                formik.setFieldValue('ngayDi', date ? date.toISOString() : null)
+                formik.setFieldValue('ngayDi', date ? date.toISOString() : '')
               }
               onBlur={() => formik.setFieldTouched('ngayDi', true)}
               className="w-full"
